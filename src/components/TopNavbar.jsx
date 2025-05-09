@@ -1,29 +1,35 @@
-import React, { useState } from 'react';
-import '../assets/css/TopNavbar.css';
-import { Link } from 'react-router-dom';
 
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import '../assets/css/TopNavbar.css';
 
 const TopNavbar = () => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileMenuOpen] = useState(false);
+  const location = useLocation();
+
+  const isActive = (path) => {
+    return location.pathname === path;
+  };
 
   return (
     <header className="navbar">
-      <button 
-        className="navbar__menu-toggle"
-        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-      >
-        ☰
-      </button>
-      
       <nav className={`navbar__navigation ${mobileMenuOpen ? 'mobile-menu-open' : ''}`}>
         <ul className="navbar__list">
-          <li className="navbar__item navbar__item--active">Dashboard</li>
-          <li className="navbar__item">Expected Guests</li>
-          <li className="navbar__item">Checked-in Guests</li>
-          <li className="navbar__item">Reports</li>
-          <div className="navbar__item">
-          <li ><Link to="/PhoneExtensionsDashboard">Directory</Link></li>
-          </div>
+          <li className={`navbar__item ${isActive('/') ? 'navbar__item--active' : ''}`}>
+            <Link to="/">Dashboard</Link>
+          </li>
+           <li className={`navbar__item ${isActive('/Expected') ? 'navbar__item--active' : ''}`}>
+            <Link to="/Expected">Expected Guests</Link>
+          </li>
+          <li className={`navbar__item ${isActive('/Checked-in') ? 'navbar__item--active' : ''}`}>
+            <Link to="/Checked-in">Checked-in Guests</Link>
+          </li>
+          <li className={`navbar__item ${isActive('/ReportsDashboard') ? 'navbar__item--active' : ''}`}>
+            <Link to="/ReportsDashboard">Reports</Link>
+          </li>
+          <li className={`navbar__item ${isActive('/PhoneExtensionsDashboard') ? 'navbar__item--active' : ''}`}>
+            <Link to="/PhoneExtensionsDashboard">Directory</Link>
+          </li>
         </ul>
       </nav>
       
@@ -49,11 +55,7 @@ const TopNavbar = () => {
           </div>
           <div className="navbar__dropdown">
             <button className="navbar__dropdown-toggle">▼</button>
-            <div className="navbar__dropdown-menu">
-              <a href="hello" className="navbar__dropdown-item">Profile</a>
-              <a href="hello" className="navbar__dropdown-item">Settings</a>
-              <a href="hello" className="navbar__dropdown-item">Logout</a>
-            </div>
+            
           </div>
         </div>
       </div>

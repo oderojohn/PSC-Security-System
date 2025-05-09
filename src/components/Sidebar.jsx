@@ -1,17 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FaHome, FaClipboardList, FaTag, FaEnvelope,
   FaExclamationTriangle, FaShieldAlt, FaFileAlt,
-  FaBars, FaTimes
+  FaBars, FaTimes, FaChevronLeft
 } from 'react-icons/fa';
 import '../assets/css/Sidebar.css';
 
 const Sidebar = () => {
   const [isActive, setIsActive] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (isCollapsed) {
+      document.body.classList.add('sidebar-collapsed');
+    } else {
+      document.body.classList.remove('sidebar-collapsed');
+    }
+  }, [isCollapsed]);
 
   const toggleSidebar = () => {
     setIsActive(!isActive);
+  };
+
+  const toggleCollapse = () => {
+    setIsCollapsed(!isCollapsed);
   };
 
   return (
@@ -20,23 +33,62 @@ const Sidebar = () => {
         {isActive ? <FaTimes /> : <FaBars />}
       </button>
 
-      <aside className={`sidebar ${isActive ? 'active' : ''}`}>
+      <aside className={`sidebar ${isActive ? 'active' : ''} ${isCollapsed ? 'collapsed' : ''}`}>
         <div className="sidebar-heading">
           <div className='divtext'>
-            <FaHome /> Dashboard
+            {isCollapsed ? '' : <><FaHome /> <span>Dashboard</span></>}
           </div>
+          <button className="collapse-btn" onClick={toggleCollapse}>
+            {isCollapsed ? <FaChevronLeft /> : <FaChevronLeft />}
+          </button>
         </div>
         <nav className="nav-links">
           <ul>
-            <li><Link className="link-button" to="/GuestRegistration"><FaClipboardList /> Register Guest</Link></li>
-            <li><Link className="link-button" to="/lost-items"><FaTag /> Lost Items/Cards</Link></li>
-            <li><Link className="link-button" to="/dropped-packages"><FaTag /> Drop Package</Link></li>
-            <li><Link className="link-button" to="/events"><FaEnvelope /> Today's Events</Link></li>
-            <li><Link className="link-button" to="/ClampingDashboard"><FaShieldAlt />Car Clamping</Link></li>
-            <li><Link className="link-button" to="/AnnouncementsDashboard"><FaExclamationTriangle /> Announcements</Link></li>
-            <li><Link className="link-button" to="/SecurityControlDashboard"><FaShieldAlt /> Security Control</Link></li>
-            <li><Link className="link-button" to="/ReportsDashboard"><FaFileAlt /> Reports</Link></li>
-            <li><Link className="link-button" to="/ReportIssue"><FaExclamationTriangle /> Report an Issue</Link></li>
+            <li>
+              <Link to="/GuestRegistration">
+                <FaClipboardList /> <span>Register Guest</span>
+              </Link>
+            </li>
+            <li>
+              <Link to="/lost-items">
+                <FaTag /> <span>Lost Items/Cards</span>
+              </Link>
+            </li>
+            <li>
+              <Link to="/dropped-packages">
+                <FaTag /> <span>Drop Package</span>
+              </Link>
+            </li>
+            <li>
+              <Link to="/events">
+                <FaEnvelope /> <span>Today's Events</span>
+              </Link>
+            </li>
+            <li>
+              <Link to="/ClampingDashboard">
+                <FaShieldAlt /> <span>Car Clamping</span>
+              </Link>
+            </li>
+            <li>
+              <Link to="/AnnouncementsDashboard">
+                <FaExclamationTriangle /> <span>Announcements</span>
+              </Link>
+            </li>
+            <li>
+              <Link to="/SecurityControlDashboard">
+                <FaShieldAlt /> <span>Security Control</span>
+              </Link>
+            </li>
+            <li>
+              <Link to="/ReportsDashboard">
+                <FaFileAlt /> <span>Reports</span>
+              </Link>
+            </li>
+            <li>
+              <Link to="/ReportIssue">
+                <FaExclamationTriangle /> <span>Report an Issue</span>
+              </Link>
+            </li>
           </ul>
         </nav>
         <div className="user-profile">

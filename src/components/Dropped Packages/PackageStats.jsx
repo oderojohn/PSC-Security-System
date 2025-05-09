@@ -4,8 +4,8 @@ import { FiPlus, FiList } from 'react-icons/fi';
 const PackageStats = ({
   activeTab,
   setActiveTab,
-  droppedPackages,
-  pickedPackages,
+  droppedCount,
+  pickedCount,
   setShowDropModal,
   setShowPickModal
 }) => {
@@ -17,18 +17,18 @@ const PackageStats = ({
           onClick={() => setActiveTab('drop')}
         >
           <span>Dropped </span>
-          <strong>{droppedPackages.length}</strong>
+          <strong>{droppedCount}</strong>
         </div>
         <div
           className={`stat ${activeTab === 'pick' ? 'active' : ''}`}
           onClick={() => setActiveTab('pick')}
         >
           <span>Picked </span>
-          <strong>{pickedPackages.length}</strong>
+          <strong>{pickedCount}</strong>
         </div>
         <div className="stat">
           <span>Pending</span>
-          <strong>{droppedPackages.filter(p => p.status === 'pending').length}</strong>
+          <strong>{droppedCount}</strong>
         </div>
       </div>
 
@@ -54,12 +54,6 @@ const PackageStats = ({
           >
             <FiPlus size={16} /> Drop Package
           </button>
-          {/* <button
-            className={`add-button ${activeTab === 'pick' ? 'primary' : 'secondary'}`}
-            onClick={() => setShowPickModal(true)}
-          >
-            <FiPlus size={16} /> Pick Package
-          </button> */}
         </div>
       </div>
     </div>
