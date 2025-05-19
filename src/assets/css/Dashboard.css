@@ -1,0 +1,80 @@
+/* Dashboard.css */
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  height: 100%;                /* fill container height */
+  overflow-y: auto;            /* scrollable if overflow */
+  padding: 0 8px 8px 0;        /* tighter internal padding */
+  box-sizing: border-box;
+}
+
+
+.card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.card-icon {
+  font-size: 24px;
+  margin-right: 10px;
+  color: #4361ee;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: #2c3e50;
+}
+
+.chart-container {
+  position: relative;
+  height: 250px;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.chart-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+.stats-container {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #4361ee;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #7f8c8d;
+}
+
+@media (max-width: 768px) {
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
+}

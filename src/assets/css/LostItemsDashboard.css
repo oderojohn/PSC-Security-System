@@ -20,7 +20,7 @@ body.sidebar-collapsed .lost-items-dashboard {
   left: 70px;
 }
 
-/* ✅ Overlay modal on top of everything else */
+/* ✅ Overlay modal on top of everything else
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -35,7 +35,7 @@ body.sidebar-collapsed .lost-items-dashboard {
 }
 
 /* Modal container itself */
-.add-modal {
+/* .add-modal {
   background: #fff;
   padding: 24px;
   border-radius: 8px;
@@ -43,7 +43,7 @@ body.sidebar-collapsed .lost-items-dashboard {
   width: 90%;
   z-index: 10000;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-}
+} */ */
 
 /* When sidebar is collapsed/expanded */
 .sidebar.active ~ .lost-items-dashboard {
@@ -141,14 +141,14 @@ body.sidebar-collapsed .lost-items-dashboard {
     max-height: 50vh;
   }
   
-  .modal-overlay {
+  /* .modal-overlay {
     padding: 20px;
   }
   
   .add-modal {
     width: 90%;
     max-width: 100%;
-  }
+  } */
 }
 
 @media (max-width: 576px) {
@@ -1460,3 +1460,63 @@ button:disabled {
   opacity: 0.65;
   cursor: not-allowed;
 }
+
+/* Match row styling */
+.match-row-container {
+  padding: 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin: 5px 0;
+  background-color: #f9f9f9;
+}
+
+.match-row-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.match-score {
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.match-reasons {
+  display: flex;
+  gap: 5px;
+}
+
+.reason-badge {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.match-details-container {
+  display: flex;
+  gap: 20px;
+}
+
+.match-column {
+  flex: 1;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.lost-column {
+  background-color: #fff3e0;
+}
+
+.found-column {
+  background-color: #e8f5e9;
+}
+
+.matches-table th {
+  text-align: center;
+  font-size: 1.1em;
+}
+

@@ -1,101 +1,82 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiPrinter, FiDownload, FiFileText } from 'react-icons/fi';
+import { AuthService } from '../../service/api/api'; 
 
 const ReportsDashboard = () => {
-  // Sample report data - in a real app, this would come from your API
-  const [reports] = useState([
-    { 
+  const [reports, setReports] = useState([]);
+  const [eventLogs, setEventLogs] = useState([]);
+  const [selectedDateRange, setSelectedDateRange] = useState('all');
+  const [selectedModule, setSelectedModule] = useState('all');
+  const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' });
+
+  // Fetch Event Logs on mount
+  useEffect(() => {
+ const fetchLogs = async () => {
+  try {
+    const logs = await AuthService.getEventLogs();
+    console.log('Raw event logs response:', logs);
+
+    const formattedLogs = logs.map((log, index) => ({
+      id: `log-${index}`,
+      module: 'System Logs',
+      type: log.action,
+      description:
+        `${log.user?.username || 'User #' + log.user || 'System'} ` +
+        `${log.action.toLowerCase()}` +
+        `${log.object_type ? ` ${log.object_type}` : ''}` +
+        `${log.object_id ? ` #${log.object_id}` : ''}`,
+      dateRange: new Date(log.timestamp).toLocaleDateString(),
+    }));
+
+    setEventLogs(formattedLogs);
+  } catch (error) {
+    console.error('Failed to load event logs:', error);
+  }
+};
+
+
+    fetchLogs();
+  }, []);
+
+  // Static sample reports
+  const staticReports = [
+    {
       id: 1,
       module: 'Lost Items/Cards',
       type: 'Daily Summary',
       description: 'Summary of all lost items reported today',
       dateRange: 'Today'
     },
-    { 
+    {
       id: 2,
       module: 'Lost Items/Cards',
       type: 'Weekly Summary',
       description: 'Summary of all lost items reported this week',
       dateRange: 'This Week'
     },
-    { 
-      id: 3,
-      module: 'Drop Package',
-      type: 'Pending Packages',
-      description: 'List of all pending package deliveries',
-      dateRange: 'Current'
-    },
-    { 
-      id: 4,
-      module: 'Today\'s Events',
-      type: 'Daily Events',
-      description: 'List of all events scheduled for today',
-      dateRange: 'Today'
-    },
-    { 
-      id: 5,
-      module: 'Clamping Records',
-      type: 'Active Clamps',
-      description: 'List of all currently clamped vehicles',
-      dateRange: 'Current'
-    },
-    { 
-      id: 6,
-      module: 'Clamping Records',
-      type: 'Monthly Summary',
-      description: 'Summary of all clamping activities this month',
-      dateRange: 'This Month'
-    },
-    { 
-      id: 7,
-      module: 'Announcements',
-      type: 'Recent Announcements',
-      description: 'List of all announcements in the last 7 days',
-      dateRange: 'Last 7 Days'
-    },
-    { 
-      id: 8,
-      module: 'Security Control',
-      type: 'Key Checkout Log',
-      description: 'Log of all key checkouts and returns',
-      dateRange: 'Custom'
-    },
-    { 
-      id: 9,
-      module: 'Report an Issue',
-      type: 'Open Issues',
-      description: 'List of all currently open issues',
-      dateRange: 'Current'
-    }
-  ]);
+    // ... keep your other existing report objects here
+  ];
 
-  const [selectedDateRange, setSelectedDateRange] = useState('all');
-  const [selectedModule, setSelectedModule] = useState('all');
-  const [customDateRange, setCustomDateRange] = useState({
-    start: '',
-    end: ''
-  });
+  // Merge static reports and dynamic event logs
+  useEffect(() => {
+    setReports([...staticReports, ...eventLogs]);
+  }, [eventLogs]);
 
-  // Filter reports based on selections
   const filteredReports = reports.filter(report => {
     const matchesModule = selectedModule === 'all' || report.module === selectedModule;
-    const matchesDate = selectedDateRange === 'all' || 
-                       report.dateRange.toLowerCase().includes(selectedDateRange.toLowerCase()) ||
-                       (selectedDateRange === 'custom' && report.dateRange === 'Custom');
+    const matchesDate =
+      selectedDateRange === 'all' ||
+      report.dateRange.toLowerCase().includes(selectedDateRange.toLowerCase()) ||
+      (selectedDateRange === 'custom' && report.dateRange === 'Custom');
     return matchesModule && matchesDate;
   });
 
-  // Function to handle printing a report
   const handlePrintReport = (report) => {
-    // In a real app, this would generate the actual report
     alert(`Printing report: ${report.module} - ${report.type}`);
-    // window.print() could be used here for actual printing
   };
 
-  // Function to handle downloading a report
   const handleDownloadReport = (report) => {
     alert(`Downloading report: ${report.module} - ${report.type}`);
-    // Actual download logic would go here
   };
 
   return (
@@ -107,8 +88,8 @@ const ReportsDashboard = () => {
       <div className="report-filters">
         <div className="filter-group">
           <label>Module:</label>
-          <select 
-            value={selectedModule} 
+          <select
+            value={selectedModule}
             onChange={(e) => setSelectedModule(e.target.value)}
           >
             <option value="all">All Modules</option>
@@ -119,13 +100,14 @@ const ReportsDashboard = () => {
             <option value="Announcements">Announcements</option>
             <option value="Security Control">Security Control</option>
             <option value="Report an Issue">Report an Issue</option>
+            <option value="System Logs">System Logs</option> {/* 👈 new option */}
           </select>
         </div>
 
         <div className="filter-group">
           <label>Date Range:</label>
-          <select 
-            value={selectedDateRange} 
+          <select
+            value={selectedDateRange}
             onChange={(e) => setSelectedDateRange(e.target.value)}
           >
             <option value="all">All Dates</option>
@@ -140,16 +122,18 @@ const ReportsDashboard = () => {
           <div className="custom-date-range">
             <input
               type="date"
-              placeholder="Start Date"
               value={customDateRange.start}
-              onChange={(e) => setCustomDateRange({...customDateRange, start: e.target.value})}
+              onChange={(e) =>
+                setCustomDateRange({ ...customDateRange, start: e.target.value })
+              }
             />
             <span>to</span>
             <input
               type="date"
-              placeholder="End Date"
               value={customDateRange.end}
-              onChange={(e) => setCustomDateRange({...customDateRange, end: e.target.value})}
+              onChange={(e) =>
+                setCustomDateRange({ ...customDateRange, end: e.target.value })
+              }
             />
           </div>
         )}
@@ -168,21 +152,21 @@ const ReportsDashboard = () => {
           </thead>
           <tbody>
             {filteredReports.length > 0 ? (
-              filteredReports.map(report => (
+              filteredReports.map((report) => (
                 <tr key={report.id}>
                   <td>{report.module}</td>
                   <td>{report.type}</td>
                   <td>{report.description}</td>
                   <td>{report.dateRange}</td>
                   <td>
-                    <button 
+                    <button
                       className="icon-button"
                       onClick={() => handlePrintReport(report)}
                       title="Print Report"
                     >
                       <FiPrinter />
                     </button>
-                    <button 
+                    <button
                       className="icon-button"
                       onClick={() => handleDownloadReport(report)}
                       title="Download Report"
@@ -202,9 +186,6 @@ const ReportsDashboard = () => {
           </tbody>
         </table>
       </div>
-
-      {/* Report Preview Modal - would be shown when a user clicks to view a report */}
-      {/* Print styles would be included in your CSS for proper printing */}
     </div>
   );
 };

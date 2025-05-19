@@ -1,11 +1,12 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Logo from './components/Logo';
 import './App.css';
 
-// Import page components
+import { useAuth } from './service/auth/AuthContext';
+
+// Page Components
 import Dashboard from './components/pages/Dashboard';
 import GuestRegistration from './components/Guest/GuestDashboard';
 import LostItemsDashboard from './components/LostItemsDashboard'; 
@@ -15,32 +16,44 @@ import SecurityControlDashboard from './components/Security Control/SecurityCont
 import ReportsDashboard from './components/Reports/Reports';
 import ReportIssue from './components/reportIssue/ReportIssue';
 import TopNavbar from './components/TopNavbar';
-import ClampingDashboard from './components/Clamping Records/ClampingRecords'
-import PackageDashboard  from './components/Dropped Packages/PackageDashboard'
-import PhoneExtensionsDashboard  from './components/PhoneExtensions/PhoneExtensionsDashboard'
+import ClampingDashboard from './components/Clamping Records/ClampingRecords';
+import PackageDashboard from './components/Dropped Packages/PackageDashboard';
+import PhoneExtensionsDashboard from './components/PhoneExtensions/PhoneExtensionsDashboard';
+import Login from './components/login/login';
 
-
+const PrivateRoute = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? children : <Navigate to="/login" />;
+};
 
 const App = () => {
+  const { isAuthenticated } = useAuth();
+
   return (
     <Router>
       <div className="app">
-        <Logo />
-        <TopNavbar/>
-        <Sidebar />
-        <div className="main-content">
+        {isAuthenticated && (
+          <>
+            <Logo />
+            <TopNavbar />
+            <Sidebar />
+          </>
+        )}
+
+        <div className={`main-content ${!isAuthenticated ? 'full-width' : ''}`}>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/GuestRegistration" element={<GuestRegistration />} />
-            <Route path="/lost-items" element={<LostItemsDashboard />} />
-            <Route path="/dropped-packages" element={<PackageDashboard  />} />
-            <Route path="/events" element={<EventsDashboard />} />
-            <Route path="/AnnouncementsDashboard" element={<AnnouncementsDashboard />} />
-            <Route path="/ClampingDashboard" element={<ClampingDashboard />} />
-            <Route path="/SecurityControlDashboard" element={<SecurityControlDashboard />} />
-            <Route path="/ReportsDashboard" element={<ReportsDashboard />} />
-            <Route path="/ReportIssue" element={<ReportIssue />} />
-            <Route path="/PhoneExtensionsDashboard" element={<PhoneExtensionsDashboard />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+            <Route path="/GuestRegistration" element={<PrivateRoute><GuestRegistration /></PrivateRoute>} />
+            <Route path="/lost-items" element={<PrivateRoute><LostItemsDashboard /></PrivateRoute>} />
+            <Route path="/dropped-packages" element={<PrivateRoute><PackageDashboard /></PrivateRoute>} />
+            <Route path="/events" element={<PrivateRoute><EventsDashboard /></PrivateRoute>} />
+            <Route path="/AnnouncementsDashboard" element={<PrivateRoute><AnnouncementsDashboard /></PrivateRoute>} />
+            <Route path="/ClampingDashboard" element={<PrivateRoute><ClampingDashboard /></PrivateRoute>} />
+            <Route path="/SecurityControlDashboard" element={<PrivateRoute><SecurityControlDashboard /></PrivateRoute>} />
+            <Route path="/ReportsDashboard" element={<PrivateRoute><ReportsDashboard /></PrivateRoute>} />
+            <Route path="/ReportIssue" element={<PrivateRoute><ReportIssue /></PrivateRoute>} />
+            <Route path="/PhoneExtensionsDashboard" element={<PrivateRoute><PhoneExtensionsDashboard /></PrivateRoute>} />
           </Routes>
         </div>
       </div>

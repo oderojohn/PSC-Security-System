@@ -1,14 +1,29 @@
-
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { AuthService } from '../service/api/api';
 import '../assets/css/TopNavbar.css';
+import { useAuth } from '../service/auth/AuthContext';
 
 const TopNavbar = () => {
   const [mobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth(); // ✅ get user and logout from context
 
-  const isActive = (path) => {
-    return location.pathname === path;
+  const isActive = (path) => location.pathname === path;
+
+  const handleLogout = async () => {
+    const confirmLogout = window.confirm(`Are you sure you want to logout${user?.username ? `, ${user.username}` : ''}?`);
+    if (!confirmLogout) return;
+
+    try {
+      await AuthService.logout(); // Optional: call backend logout
+    } catch (error) {
+      console.warn('Backend logout failed, proceeding anyway');
+    } finally {
+      logout();
+      navigate('/login');
+    }
   };
 
   return (
@@ -18,7 +33,7 @@ const TopNavbar = () => {
           <li className={`navbar__item ${isActive('/') ? 'navbar__item--active' : ''}`}>
             <Link to="/">Dashboard</Link>
           </li>
-           <li className={`navbar__item ${isActive('/Expected') ? 'navbar__item--active' : ''}`}>
+          <li className={`navbar__item ${isActive('/Expected') ? 'navbar__item--active' : ''}`}>
             <Link to="/Expected">Expected Guests</Link>
           </li>
           <li className={`navbar__item ${isActive('/Checked-in') ? 'navbar__item--active' : ''}`}>
@@ -32,18 +47,18 @@ const TopNavbar = () => {
           </li>
         </ul>
       </nav>
-      
+
       <div className="navbar__user">
         <button className="navbar__action">
           <span className="navbar__icon">🔄</span>
           <span className="navbar__action-text">Refresh</span>
         </button>
-        
+
         <div className="navbar__notifications">
           <span className="navbar__icon">🔔</span>
           <span className="navbar__badge">3</span>
         </div>
-        
+
         <div className="navbar__profile">
           <img 
             src="https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?semt=ais_hybrid&w=740" 
@@ -51,11 +66,16 @@ const TopNavbar = () => {
             className="navbar__avatar" 
           />
           <div className="navbar__user-info">
-            <span className="navbar__user-role">User Name</span>
+            <span className="navbar__user-role">{user?.username || 'User'}</span> {/* ✅ Show username */}
           </div>
           <div className="navbar__dropdown">
-            <button className="navbar__dropdown-toggle">▼</button>
-            
+            <button 
+              className="navbar__logout-button" 
+              onClick={handleLogout}
+              title="Logout"
+            >
+              🔌 Logout
+            </button>
           </div>
         </div>
       </div>
