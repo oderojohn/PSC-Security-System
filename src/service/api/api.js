@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://momentum-fusion-theta-occupied.trycloudflare.com/api/';
+const API_BASE_URL = 'http://127.0.0.1:8000/api/';
 
 // Axios instance
 const api = axios.create({
@@ -56,7 +56,12 @@ api.interceptors.response.use(
 // PackageService
 export const PackageService = {
   getPackages: async (params = {}) => {
-    const response = await api.get('/packages/', { params });
+    const response = await api.get('/packages/', { params: { ...params, status: 'pending' } });
+    return response.data;
+  },
+
+  getPickedPackages: async (params = {}) => {
+    const response = await api.get('/packages/', { params: { ...params, status: 'picked' } });
     return response.data;
   },
 
@@ -85,12 +90,12 @@ export const PackageService = {
     return response.data;
   },
 
-  getStats: async () => {
-    const response = await api.get('/packages/stats/');
+  getStats: async (params = {}) => {
+    const response = await api.get('/packages/stats/', { params });
     return response.data;
   },
 
-  searchPackages: async (params) => {
+  searchPackages: async (params = {}) => {
     const response = await api.get('/packages/', { params });
     return response.data;
   },
@@ -103,18 +108,10 @@ export const PackageService = {
     return response.data;
   },
 
-  getPackageHistory: async (id) => {
-    const response = await api.get(`/packages/${id}/history/`);
+  getSummary: async (params = {}) => {
+    const response = await api.get('/packages/summary/', { params });
     return response.data;
   },
-
-  bulkUpdatePackages: async (ids, data) => {
-    const response = await api.post('/packages/bulk-update/', {
-      ids,
-      data,
-    });
-    return response.data;
-  }
 };
 
 // AuthService
@@ -153,7 +150,7 @@ export const AuthService = {
 // LostFoundService
 export const LostFoundService = {
   getLostItems: async (params = {}) => {
-    const response = await api.get('/items/lost/', { params });
+    const response = await api.get('items/lost/', { params });
     return response.data;
   },
 
@@ -192,8 +189,10 @@ export const LostFoundService = {
     return response.data;
   },
 
-  getStats: async () => {
-    const response = await api.get('/items/stats/');
+  getFoundWeeklyReport: async (weeks = 2) => {
+    const response = await api.get(`/items/found/weekly_report/`, {
+      params: { weeks }
+    });
     return response.data;
   }
 };

@@ -14,6 +14,8 @@
   padding: 16px;
   overflow: hidden;
   transition: all 0.3s ease;
+    overflow-y: auto;
+
 }
 
 body.sidebar-collapsed .lost-items-dashboard {

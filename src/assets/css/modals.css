@@ -290,4 +290,18 @@
             grid-template-columns: 1fr;
           }
         }
-      
+.error {
+  border-color: #ff4444 !important;
+}
+
+.field-error {
+  color: #ff4444;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+input.error, select.error, textarea.error {
+  border: 1px solid #ff4444;
+  background-color: #fff9f9;
+}

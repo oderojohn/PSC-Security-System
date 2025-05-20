@@ -32,74 +32,104 @@ const LostFoundTable = ({
   };
 
   const renderMatchRow = (match, index) => {
-    if (!match) return null;
-    const lostItem = match.lost_item || {};
-    const foundItem = match.found_item || {};
-    const matchScore = match.match_score || 0;
-    const matchReasons = match.match_reasons || [];
+  if (!match) return null;
+  const lostItem = match.lost_item || {};
+  const foundItem = match.found_item || {};
+  const matchScore = match.match_score || 0;
+  const matchReasons = match.match_reasons || [];
 
-    return (
-      <tr key={`match-${index}`}>
-        <td colSpan="9">
-          <div className="match-row-container">
-            <div className="match-row-header">
-              <span className="match-score">
-                {Math.round(matchScore * 100)}% Match
-              </span>
-              <div className="match-reasons">
-                {matchReasons.map((reason, i) => (
-                  <span key={`reason-${i}`} className="reason-badge">
-                    {reason}
-                  </span>
-                ))}
-              </div>
+  return (
+    <tr key={`match-${index}`}>
+      <td colSpan="9">
+        <div className="match-row-container">
+          <div className="match-row-header">
+            <span className="match-score">
+              {Math.round(matchScore * 100)}% Match
+            </span>
+            <div className="match-reasons">
+              {matchReasons.map((reason, i) => (
+                <span key={`reason-${i}`} className="reason-badge">
+                  {reason}
+                </span>
+              ))}
             </div>
-            <div className="match-details-container">
-              <div className="match-column lost-column">
-                <h4>Lost Item</h4>
-                <p><strong>Type:</strong> {lostItem.type === 'card' ? 'Card' : 'Item'}</p>
-                {lostItem.type === 'card' ? (
-                  <>
-                    <p><strong>Card Type:</strong> {safeText(lostItem.card_type)}</p>
-                    <p><strong>Last 4 Digits:</strong> {safeText(lostItem.card_last_four)}</p>
-                  </>
-                ) : (
-                  <>
-                    <p><strong>Name:</strong> {safeText(lostItem.item_name)}</p>
-                    <p><strong>Description:</strong> {safeText(lostItem.description)}</p>
-                  </>
-                )}
-                <p><strong>Owner:</strong> {safeText(lostItem.owner_name, 'Unknown')}</p>
-                <p><strong>Place Lost:</strong> {safeText(lostItem.place_lost)}</p>
-                <p><strong>Date Reported:</strong> {lostItem.date_reported ? new Date(lostItem.date_reported).toLocaleString() : 'N/A'}</p>
-                <p><strong>Status:</strong> <span className={`status-badge ${lostItem.status || 'pending'}`}>{lostItem.status || 'pending'}</span></p>
-              </div>
-              <div className="match-column found-column">
-                <h4>Found Item</h4>
-                <p><strong>Type:</strong> {foundItem.type === 'card' ? 'Card' : 'Item'}</p>
-                {foundItem.type === 'card' ? (
-                  <>
-                    <p><strong>Card Type:</strong> {safeText(foundItem.card_type)}</p>
-                    <p><strong>Last 4 Digits:</strong> {safeText(foundItem.card_last_four)}</p>
-                  </>
-                ) : (
-                  <>
-                    <p><strong>Name:</strong> {safeText(foundItem.item_name)}</p>
-                    <p><strong>Description:</strong> {safeText(foundItem.description)}</p>
-                  </>
-                )}
-                <p><strong>Owner:</strong> {safeText(foundItem.owner_name, 'Unknown')}</p>
-                <p><strong>Place Found:</strong> {safeText(foundItem.place_found)}</p>
-                <p><strong>Date Reported:</strong> {foundItem.date_reported ? new Date(foundItem.date_reported).toLocaleString() : 'N/A'}</p>
-                <p><strong>Status:</strong> <span className={`status-badge ${foundItem.status || 'pending'}`}>{foundItem.status || 'pending'}</span></p>
-              </div>
+            <div className="match-actions">
+              {lostItem.status === 'pending' && (
+                <button
+                  className="found-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    markAsFound(lostItem.id);
+                  }}
+                >
+                  <FiCheck /> Mark as Found
+                </button>
+              )}
+              <button
+                className="view-button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewDetails(foundItem);
+                }}
+              >
+                <FiEye /> Found Item Details
+              </button>
+              <button
+                className="view-button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewDetails(lostItem);
+                }}
+              >
+                <FiEye /> Lost Item Details
+              </button>
             </div>
           </div>
-        </td>
-      </tr>
-    );
-  };
-
+          <div className="match-details-container">
+            <div className="match-column lost-column">
+              <h4>Lost Item</h4>
+              <p><strong>Type:</strong> {lostItem.type === 'card' ? 'Card' : 'Item'}</p>
+              {lostItem.type === 'card' ? (
+                <>
+                  <p><strong>Card Type:</strong> {safeText(lostItem.card_type)}</p>
+                  <p><strong>Last 4 Digits:</strong> {safeText(lostItem.card_last_four)}</p>
+                </>
+              ) : (
+                <>
+                  <p><strong>Name:</strong> {safeText(lostItem.item_name)}</p>
+                  <p><strong>Description:</strong> {safeText(lostItem.description)}</p>
+                </>
+              )}
+              <p><strong>Owner:</strong> {safeText(lostItem.owner_name, 'Unknown')}</p>
+              <p><strong>Place Lost:</strong> {safeText(lostItem.place_lost)}</p>
+              <p><strong>Date Reported:</strong> {lostItem.date_reported ? new Date(lostItem.date_reported).toLocaleString() : 'N/A'}</p>
+              <p><strong>Status:</strong> <span className={`status-badge ${lostItem.status || 'pending'}`}>{lostItem.status || 'pending'}</span></p>
+            </div>
+            <div className="match-column found-column">
+              <h4>Found Item</h4>
+              <p><strong>Type:</strong> {foundItem.type === 'card' ? 'Card' : 'Item'}</p>
+              {foundItem.type === 'card' ? (
+                <>
+                  <p><strong>Card Type:</strong> {safeText(foundItem.card_type)}</p>
+                  <p><strong>Last 4 Digits:</strong> {safeText(foundItem.card_last_four)}</p>
+                </>
+              ) : (
+                <>
+                  <p><strong>Name:</strong> {safeText(foundItem.item_name)}</p>
+                  <p><strong>Description:</strong> {safeText(foundItem.description)}</p>
+                </>
+              )}
+              <p><strong>Owner:</strong> {safeText(foundItem.owner_name, 'Unknown')}</p>
+              <p><strong>Place Found:</strong> {safeText(foundItem.place_found)}</p>
+              <p><strong>Date Reported:</strong> {foundItem.date_reported ? new Date(foundItem.date_reported).toLocaleString() : 'N/A'}</p>
+              <p><strong>Status:</strong> <span className={`status-badge ${foundItem.status || 'pending'}`}>{foundItem.status || 'pending'}</span></p>
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>
+  );
+};
   const renderRow = (item, isLost = false) => {
     if (!item) return null;
     const rowProps = !isLost ? {
@@ -138,7 +168,7 @@ const LostFoundTable = ({
                 >
                   <FiCheck /> Found
                 </button>
-                <button
+                {/* <button
                   className="match-button"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -148,7 +178,7 @@ const LostFoundTable = ({
                   disabled={loadingMatches}
                 >
                   {loadingMatches ? 'Loading...' : 'Find Matches'}
-                </button>
+                </button> */}
               </>
             ) : (
               <button

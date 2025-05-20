@@ -33,12 +33,7 @@ const TopNavbar = () => {
           <li className={`navbar__item ${isActive('/') ? 'navbar__item--active' : ''}`}>
             <Link to="/">Dashboard</Link>
           </li>
-          <li className={`navbar__item ${isActive('/Expected') ? 'navbar__item--active' : ''}`}>
-            <Link to="/Expected">Expected Guests</Link>
-          </li>
-          <li className={`navbar__item ${isActive('/Checked-in') ? 'navbar__item--active' : ''}`}>
-            <Link to="/Checked-in">Checked-in Guests</Link>
-          </li>
+         
           <li className={`navbar__item ${isActive('/ReportsDashboard') ? 'navbar__item--active' : ''}`}>
             <Link to="/ReportsDashboard">Reports</Link>
           </li>

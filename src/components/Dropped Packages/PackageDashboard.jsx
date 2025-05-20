@@ -48,15 +48,18 @@ const PackageDashboard = () => {
       setLoading(true);
       setError(null);
       
-      const [allPackages, statsData] = await Promise.all([
+      const [pendingpackages, statsData,pickedPackages] = await Promise.all([
         PackageService.getPackages(),
-        PackageService.getStats()
+        PackageService.getStats(),
+        PackageService.getPickedPackages()
       ]);
 
-      setPackages(allPackages);
-      setDroppedPackages(allPackages.filter(pkg => pkg.status === 'pending'));
-      setPickedPackages(allPackages.filter(pkg => pkg.status === 'picked'));
+      // setpendingpackages(allPackages);
+      setDroppedPackages(pendingpackages);
+      setPickedPackages(pickedPackages);
       setStats(statsData);
+      console.log("console print",pickedPackages)
+
     } catch (err) {
       setError(err.message || 'Failed to fetch packages');
     } finally {
@@ -134,41 +137,21 @@ const PackageDashboard = () => {
       setError(null);
       
       const pickerData = {
-        picker_name: pickedBy.name,
-        picker_phone: pickedBy.phone
-      };
-
-      await PackageService.pickPackage(selectedPackage.id, pickerData);
-
-      const updatedPackage = {
-        ...selectedPackage,
-        status: 'picked',
         picked_by: pickedBy.name,
         picker_phone: pickedBy.phone,
-        picked_at: new Date().toISOString()
+        picker_id: pickedBy.memberId,
       };
-
-      setPackages(packages.map(pkg => 
-        pkg.id === selectedPackage.id ? updatedPackage : pkg
-      ));
-      setDroppedPackages(droppedPackages.filter(pkg => pkg.id !== selectedPackage.id));
-      setPickedPackages([...pickedPackages, updatedPackage]);
-      setStats({
-        ...stats,
-        pending: stats.pending - 1,
-        picked: stats.picked + 1
-      });
-
+      await PackageService.pickPackage(selectedPackage.id, pickerData);
       setShowDetailsModal(false);
       setPickedBy({ memberId: '', name: '', phone: '' });
       setSelectedPackage(null);
       
       setSuccess('Package picked successfully!');
+      await fetchData(); // Refresh all data after picking
     } catch (err) {
       setError(err.message || 'Error picking package');
     }
   };
-
   if (loading) {
     return (
       <div className="lost-items-dashboard">
@@ -232,6 +215,7 @@ const PackageDashboard = () => {
           setSelectedPackage(pkg);
           setShowDetailsModal(true);
         }}
+        refreshData={fetchData} // Pass the refresh function
       />
       
       <PackageModals 

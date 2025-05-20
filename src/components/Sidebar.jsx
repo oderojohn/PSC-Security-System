@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  FaHome, FaClipboardList, FaTag, FaEnvelope,
-  FaExclamationTriangle, FaShieldAlt, FaFileAlt,
+  FaHome, FaClipboardList, FaTag, FaFileAlt,
   FaBars, FaTimes, FaChevronLeft
-} from 'react-icons/fa';
+} from 'react-icons/fa';//FaEnvelope,FaExclamationTriangle, FaShieldAlt,
 import '../assets/css/Sidebar.css';
 
 const Sidebar = () => {
@@ -45,13 +44,8 @@ const Sidebar = () => {
         <nav className="nav-links">
           <ul>
             <li>
-              <Link to="/GuestRegistration">
-                <FaClipboardList /> <span>Register Guest</span>
-              </Link>
-            </li>
-            <li>
               <Link to="/lost-items">
-                <FaTag /> <span>Lost Items/Cards</span>
+                <FaClipboardList /> <span>Lost Items/Cards</span>
               </Link>
             </li>
             <li>
@@ -59,7 +53,7 @@ const Sidebar = () => {
                 <FaTag /> <span>Drop Package</span>
               </Link>
             </li>
-            <li>
+            {/* <li>
               <Link to="/events">
                 <FaEnvelope /> <span>Today's Events</span>
               </Link>
@@ -78,17 +72,17 @@ const Sidebar = () => {
               <Link to="/SecurityControlDashboard">
                 <FaShieldAlt /> <span>Security Control</span>
               </Link>
-            </li>
+            </li> */}
             <li>
               <Link to="/ReportsDashboard">
                 <FaFileAlt /> <span>Reports</span>
               </Link>
             </li>
-            <li>
+            {/* <li>
               <Link to="/ReportIssue">
                 <FaExclamationTriangle /> <span>Report an Issue</span>
               </Link>
-            </li>
+            </li> */}
           </ul>
         </nav>
         <div className="user-profile">

@@ -1,5 +1,6 @@
 import React from 'react';
 import { FiPlus, FiList } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 
 const LostFoundStats = ({
   activeTab,
@@ -8,12 +9,12 @@ const LostFoundStats = ({
   foundItems,
   pendingItems,
   matchesCount = 0,
-  setShowAddLostModal,
-  setShowAddFoundModal,
   showMatches,
   setShowMatches,
   fetchPotentialMatches,
 }) => {
+  const navigate = useNavigate();
+
   const handleTabClick = (tab) => {
     setActiveTab(tab);
     setShowMatches(false);
@@ -21,8 +22,16 @@ const LostFoundStats = ({
 
   const handleMatchClick = () => {
     setShowMatches(true);
-    setActiveTab('matches'); // Optional: use 'matches' to signify selection
+    setActiveTab('matches');
     fetchPotentialMatches();
+  };
+
+  const handleReportLost = () => {
+    navigate('/lost-found/report-lost');
+  };
+
+  const handleReportFound = () => {
+    navigate('/lost-found/report-found');
   };
 
   return (
@@ -42,10 +51,6 @@ const LostFoundStats = ({
           <span>Found</span>
           <strong>{foundItems}</strong>
         </div>
-        {/* <div className="stat">
-          <span>Pending</span>
-          <strong>{pendingItems}</strong>
-        </div> */}
         <div
           className={`stat ${showMatches ? 'active' : ''}`}
           onClick={handleMatchClick}
@@ -72,13 +77,13 @@ const LostFoundStats = ({
         <div className="action-buttons">
           <button
             className={`add-button ${activeTab === 'lost' && !showMatches ? 'primary' : 'secondary'}`}
-            onClick={() => setShowAddLostModal(true)}
+            onClick={handleReportLost}
           >
             <FiPlus size={16} /> Report Lost
           </button>
           <button
             className={`add-button ${activeTab === 'found' && !showMatches ? 'primary' : 'secondary'}`}
-            onClick={() => setShowAddFoundModal(true)}
+            onClick={handleReportFound}
           >
             <FiPlus size={16} /> Report Found
           </button>

@@ -1,0 +1,281 @@
+/* Base Styles */
+.lf-form-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+}
+
+.lf-form-header {
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 1rem;
+}
+
+.lf-form-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.75rem;
+  color: #2c3e50;
+  margin: 0 0 0.5rem;
+}
+
+.lf-icon {
+  color: #3498db;
+}
+
+.lf-form-description {
+  color: #7f8c8d;
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* Form Groups */
+.lf-form-group {
+  margin-bottom: 1.5rem;
+}
+
+.lf-form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #2c3e50;
+  font-size: 0.95rem;
+}
+
+.lf-form-control {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  background-color: #f9f9f9;
+}
+
+.lf-form-control:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  background-color: #fff;
+}
+
+.lf-form-control.is-invalid {
+  border-color: #e74c3c;
+  background-color: #fff9f9;
+}
+
+.lf-form-control.is-invalid:focus {
+  box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+}
+
+textarea.lf-form-control {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* Error Messages */
+.lf-error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  background-color: #fef2f2;
+  color: #e74c3c;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.lf-error-feedback {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  color: #e74c3c;
+  font-size: 0.85rem;
+}
+
+.lf-error-icon {
+  flex-shrink: 0;
+}
+
+/* Buttons */
+.lf-btn {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.lf-btn-primary {
+  background-color: #3498db;
+  color: white;
+}
+
+.lf-btn-primary:hover {
+  background-color: #2980b9;
+}
+
+.lf-btn-primary:disabled {
+  background-color: #bdc3c7;
+  cursor: not-allowed;
+}
+
+.lf-btn-secondary {
+  background-color: #ecf0f1;
+  color: #2c3e50;
+}
+
+.lf-btn-secondary:hover {
+  background-color: #d5dbdb;
+}
+
+.lf-btn-secondary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Form Footer */
+.lf-form-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #eee;
+}
+
+/* Details Form */
+.lf-details-container {
+  max-width: 800px;
+  margin: 2rem auto;
+}
+
+.lf-details-form {
+  position: relative;
+}
+
+.lf-status-badge {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.lf-status-badge[data-status="found"] {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.lf-status-badge[data-status="pending"] {
+  background-color: #f39c12;
+  color: white;
+}
+
+.lf-status-badge[data-status="claimed"] {
+  background-color: #95a5a6;
+  color: white;
+}
+
+.lf-details-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+.lf-detail-row {
+  display: flex;
+  align-items: flex-start;
+}
+
+.lf-detail-label {
+  font-weight: 500;
+  color: #7f8c8d;
+  min-width: 120px;
+  padding-right: 1rem;
+}
+
+.lf-detail-value {
+  flex: 1;
+  color: #2c3e50;
+  word-break: break-word;
+}
+
+/* Pickup Form */
+.lf-pickup-form {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #eee;
+}
+
+.lf-scan-notice {
+  background-color: #e8f4fc;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  color: #2980b9;
+  font-size: 0.95rem;
+}
+
+.lf-pickup-form h4 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #2c3e50;
+}
+
+.lf-action-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.lf-pickup-btn {
+  margin-top: 1.5rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .lf-form-container {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+  
+  .lf-form-footer {
+    flex-direction: column;
+  }
+  
+  .lf-btn {
+    width: 100%;
+  }
+  
+  .lf-detail-row {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .lf-detail-label {
+    min-width: auto;
+  }
+  
+  .lf-status-badge {
+    position: static;
+    display: inline-block;
+    margin-bottom: 1rem;
+  }
+  
+  .lf-action-buttons {
+    flex-direction: column;
+  }
+}
