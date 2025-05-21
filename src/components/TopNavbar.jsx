@@ -61,7 +61,7 @@ const TopNavbar = () => {
             className="navbar__avatar" 
           />
           <div className="navbar__user-info">
-            <span className="navbar__user-role">{user?.username || 'User'}</span> {/* ✅ Show username */}
+            <span className="navbar__user-role">{user?.username || 'User'}</span> 
           </div>
           <div className="navbar__dropdown">
             <button 
@@ -69,7 +69,7 @@ const TopNavbar = () => {
               onClick={handleLogout}
               title="Logout"
             >
-              🔌 Logout
+              ⎋ 
             </button>
           </div>
         </div>

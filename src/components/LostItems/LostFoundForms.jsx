@@ -22,9 +22,14 @@ export const ReportLostForm = ({ onSubmit }) => {
   const validateForm = () => {
     const newErrors = {};
     
-    if (formData.type === 'card' && !/^\d{4}$/.test(formData.card_last_four)) {
-      newErrors.card_last_four = 'Please enter exactly 4 digits';
+    if (
+    formData.type === 'card' &&
+    !/^[A-Z]\d{4}[A-Z]?$/.test(formData.card_last_four)
+    ) {
+    newErrors.card_last_four =
+        'Format must start with a letter, followed by 4 digits, and optionally end with a letter (e.g., K1234 or K1234A)';
     }
+
     
     if (formData.type === 'item' && !formData.item_name.trim()) {
       newErrors.item_name = 'Item name is required';
@@ -105,26 +110,30 @@ export const ReportLostForm = ({ onSubmit }) => {
 
         {formData.type === 'card' ? (
           <div className="lf-form-group">
-            <label>Last 4 Digits</label>
-            <input
-              className={`lf-form-control ${errors.card_last_four ? 'is-invalid' : ''}`}
-              type="text"
-              placeholder="e.g., 4242"
-              maxLength="4"
-              value={formData.card_last_four}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, '').slice(0, 4);
-                setFormData({ ...formData, card_last_four: value });
-              }}
-              required
-            />
-            {errors.card_last_four && (
-              <div className="lf-error-feedback">
-                <FiAlertCircle className="lf-error-icon" />
-                {errors.card_last_four}
-              </div>
-            )}
-          </div>
+        <label>Member No</label>
+        <input
+            className={`lf-form-control ${errors.card_last_four ? 'is-invalid' : ''}`}
+            type="text"
+            placeholder="e.g., K1234 or K1234A"
+            maxLength="6"
+            value={formData.card_last_four}
+            onChange={(e) => {
+            const input = e.target.value.toUpperCase();
+            const valid = /^[A-Z]\d{0,4}[A-Z]?$/.test(input); // Valid progressive typing
+            if (valid || input === '') {
+                setFormData({ ...formData, card_last_four: input });
+            }
+            }}
+            required
+        />
+        {errors.card_last_four && (
+            <div className="lf-error-feedback">
+            <FiAlertCircle className="lf-error-icon" />
+            {errors.card_last_four}
+            </div>
+        )}
+        </div>
+
         ) : (
           <>
             <div className="lf-form-group">
@@ -594,7 +603,7 @@ export const ItemDetailsForm = ({ item, onPickup }) => {
 
           {item.type === 'card' ? (
             <div className="lf-detail-row">
-              <span className="lf-detail-label">Card Number:</span>
+              <span className="lf-detail-label">Member No:</span>
               <span className="lf-detail-value">•••• {item.card_last_four}</span>
             </div>
           ) : (

@@ -212,7 +212,10 @@ const LostItemsDashboard = () => {
       />
 
       {loading ? (
-        <div className="loading-spinner">Loading...</div>
+            <div className="lost-items-dashboard">
+
+        <div className="loading-spinner"></div>
+        </div>
       ) : (
     <LostFoundTable
     activeTab={activeTab}
@@ -224,6 +227,7 @@ const LostItemsDashboard = () => {
     potentialMatches={potentialMatches}
     showMatches={showMatches}
     setShowMatches={setShowMatches}
+    fetchPotentialMatches={fetchPotentialMatches}
     onViewDetails={(item) => {
       setSelectedItem(item);
       setShowDetailsModal(true);
