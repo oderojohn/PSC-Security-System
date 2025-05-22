@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FiPrinter, FiFileText, FiChevronDown, FiChevronUp, FiDownload, FiEye, FiPackage, FiKey, FiFile } from 'react-icons/fi';
 import { AuthService, PackageService } from '../../service/api/api';
-import { saveAs } from 'file-saver';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+// import { saveAs } from 'file-saver';
+// import { jsPDF } from 'jspdf';
 
 const ReportsDashboard = () => {
   const [eventLogs, setEventLogs] = useState([]);

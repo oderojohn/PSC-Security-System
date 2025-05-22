@@ -17,18 +17,13 @@ const PackageStats = ({
           onClick={() => setActiveTab('drop')}
         >
           <span>Dropped </span>
-          <strong>{droppedCount}</strong>
+          {/* <strong>{droppedCount}</strong> */}
         </div>
         <div
           className={`stat ${activeTab === 'pick' ? 'active' : ''}`}
           onClick={() => setActiveTab('pick')}
         >
           <span>Picked </span>
-          <strong>{pickedCount}</strong>
-        </div>
-        <div className="stat">
-          <span>Pending</span>
-          <strong>{droppedCount}</strong>
         </div>
       </div>
 

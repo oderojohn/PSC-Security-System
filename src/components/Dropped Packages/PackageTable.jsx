@@ -13,7 +13,7 @@ const PackageTable = ({
     <div className="no-data-message">
       <div className="sad-emoji">📦</div>
       <h3>No packages found</h3>
-      <p>We couldn't find any {activeTab === 'drop' ? 'dropped' : 'picked'} packages matching your search.</p>
+      <p>We couldn't find any {activeTab === 'drop' ? 'dropped' : 'picked'} package</p>
       {searchTerm && (
         <button className="clear-search" onClick={() => {
           setSearchTerm('');

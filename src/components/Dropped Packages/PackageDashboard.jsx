@@ -200,7 +200,9 @@ const PackageDashboard = () => {
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
         droppedCount={stats.pending} 
-        pickedCount={stats.picked} 
+        pickedCount={stats.picked}
+        setSearchTerm={setSearchTerm}
+        searchTerm={searchTerm}
         setShowDropModal={setShowDropModal} 
         setShowPickModal={setShowPickModal} 
       />

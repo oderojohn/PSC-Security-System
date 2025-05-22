@@ -9,12 +9,18 @@ const Dashboard = () => {
     <div className="lost-items-dashboard">
     <div className="dashboard-container">
       <div className="dashboard-section">
-        <h1>Package Delivery Dashboard</h1>
+      <div className="dashboard-header">
+
+        <h2>Package Delivery Dashboard</h2>
+        </div>
         <PackageDashboard />
       </div>
       
       <div className="dashboard-section">
-        <h1>Lost & Found Dashboard</h1>
+      <div className="dashboard-header">
+
+        <h2>Lost & Found Dashboard</h2>
+        </div>
         <LostFoundDashboard />
       </div>
     </div>

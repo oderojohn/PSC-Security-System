@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://adsl-appear-calculate-sisters.trycloudflare.com/api/';
+const API_BASE_URL = 'http://127.0.0.1:8000/api/';
 
 // Axios instance
 const api = axios.create({
@@ -61,9 +61,16 @@ export const PackageService = {
   },
 
   getPickedPackages: async (params = {}) => {
-    const response = await api.get('/packages/', { params: { ...params, status: 'picked' } });
+    const response = await api.get('/packages/', {
+      params: {
+        ...params,
+        status: 'picked',
+        time_range: 'today'
+      }
+    });
     return response.data;
   },
+  
 
   createPackage: async (data) => {
     const response = await api.post('/packages/', data);
