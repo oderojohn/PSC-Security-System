@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  FaHome, FaClipboardList, FaTag, FaFileAlt,
+  FaHome,FaTag, FaFileAlt,
   FaBars, FaTimes, FaChevronLeft
 } from 'react-icons/fa';//FaEnvelope,FaExclamationTriangle, FaShieldAlt,
 import '../assets/css/Sidebar.css';
@@ -43,11 +43,11 @@ const Sidebar = () => {
         </div>
         <nav className="nav-links">
           <ul>
-            <li>
+            {/* <li>
               <Link to="/lost-items">
                 <FaClipboardList /> <span>Lost Items/Cards</span>
               </Link>
-            </li>
+            </li> */}
             <li>
               <Link to="/dropped-packages">
                 <FaTag /> <span>Drop Package</span>

@@ -369,62 +369,70 @@ const PackageModals = ({
 
             {!showPickForm ? (
               <>
-                <div className="modal-body">
-                  <div className="details-grid">
-                    <div className="detail-item">
-                      <span className="detail-label">Code:</span>
-                      <span className="detail-value code">{selectedPackage.code}</span>
-                    </div>
-                    <div className="detail-item">
-                      <span className="detail-label">Type:</span>
-                      <span className="detail-value">{selectedPackage.type === 'document' ? 'Document' : 'Package'}</span>
-                    </div>
-                    <div className="detail-item">
-                      <span className="detail-label">Description:</span>
-                      <span className="detail-value">{selectedPackage.description}</span>
-                    </div>
-                    <div className="detail-item">
-                      <span className="detail-label">Shelf Number:</span>
-                      <span className="detail-value shelf-number">
-                        {selectedPackage.shelf}
-                      </span>
-                    </div>
-                    <div className="detail-item">
-                      <span className="detail-label">Recipient:</span>
-                      <span className="detail-value">{selectedPackage.recipient_name}</span>
-                    </div>
-                    <div className="detail-item">
-                      <span className="detail-label">Recipient Phone:</span>
-                      <span className="detail-value">{selectedPackage.recipient_phone}</span>
-                    </div>
-                    <div className="detail-item">
-                      <span className="detail-label">Dropped By:</span>
-                      <span className="detail-value">{selectedPackage.dropped_by}</span>
-                    </div>
-                    {selectedPackage.picked_by && (
-                      <div className="detail-item">
-                        <span className="detail-label">Picked By:</span>
-                        <span className="detail-value">{selectedPackage.picked_by}</span>
-                      </div>
-                    )}
-                    <div className="detail-item">
-                      <span className="detail-label">Status:</span>
-                      <span className={`detail-value status-${selectedPackage.status}`}>
-                        {selectedPackage.status}
-                      </span>
-                    </div>
-                    <div className="detail-item">
-                      <span className="detail-label">Date Dropped:</span>
-                      <span className="detail-value">{new Date(selectedPackage.created_at).toLocaleString()}</span>
-                    </div>
-                    {selectedPackage.picked_at && (
-                      <div className="detail-item">
-                        <span className="detail-label">Date Picked:</span>
-                        <span className="detail-value">{new Date(selectedPackage.picked_at).toLocaleString()}</span>
-                      </div>
-                    )}
-                  </div>                
-                    </div>
+                <div className="modal-body" style={{ padding: '15px' }}>
+  <div className="details-grid" style={{
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '8px',
+    fontSize: '0.85rem'
+  }}>
+    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
+      <span className="detail-label" style={{ fontWeight: '600' }}>Code:</span>
+      <span className="detail-value code">{selectedPackage.code}</span>
+    </div>
+    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
+      <span className="detail-label" style={{ fontWeight: '600' }}>Type:</span>
+      <span className="detail-value">{selectedPackage.type === 'document' ? 'Document' : 'Package'}</span>
+    </div>
+    
+    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
+      <span className="detail-label" style={{ fontWeight: '600' }}>Shelf:</span>
+      <span className="detail-value shelf-number">{selectedPackage.shelf}</span>
+    </div>
+    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
+      <span className="detail-label" style={{ fontWeight: '600' }}>Status:</span>
+      <span className={`detail-value status-${selectedPackage.status}`}>
+        {selectedPackage.status}
+      </span>
+    </div>
+    
+    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
+      <span className="detail-label" style={{ fontWeight: '600' }}>Recipient:</span>
+      <span className="detail-value">{selectedPackage.recipient_name}</span>
+    </div>
+    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
+      <span className="detail-label" style={{ fontWeight: '600' }}>Recipient Phone:</span>
+      <span className="detail-value">{selectedPackage.recipient_phone}</span>
+    </div>
+    
+    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
+      <span className="detail-label" style={{ fontWeight: '600' }}>Dropped By:</span>
+      <span className="detail-value">{selectedPackage.dropped_by}</span>
+    </div>
+    {selectedPackage.picked_by && (
+      <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
+        <span className="detail-label" style={{ fontWeight: '600' }}>Picked By:</span>
+        <span className="detail-value">{selectedPackage.picked_by}</span>
+      </div>
+    )}
+    
+    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
+      <span className="detail-label" style={{ fontWeight: '600' }}>Date Dropped:</span>
+      <span className="detail-value">{new Date(selectedPackage.created_at).toLocaleString()}</span>
+    </div>
+    {selectedPackage.picked_at && (
+      <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
+        <span className="detail-label" style={{ fontWeight: '600' }}>Date Picked:</span>
+        <span className="detail-value">{new Date(selectedPackage.picked_at).toLocaleString()}</span>
+      </div>
+    )}
+    
+    <div className="detail-item" style={{ gridColumn: '1 / span 2', display: 'flex', gap: '5px' }}>
+      <span className="detail-label" style={{ fontWeight: '600' }}>Description:</span>
+      <span className="detail-value">{selectedPackage.description}</span>
+    </div>
+  </div>
+</div>
                 
 
                 {selectedPackage.status === 'pending' && (

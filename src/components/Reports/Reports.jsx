@@ -1,43 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { FiPrinter, FiFileText, FiChevronDown, FiChevronUp, FiDownload, FiEye, FiPackage, FiKey, FiFile } from 'react-icons/fi';
-import { AuthService, PackageService } from '../../service/api/api';
-// import { saveAs } from 'file-saver';
-// import { jsPDF } from 'jspdf';
+import { FiFileText, FiChevronDown, FiChevronUp, FiDownload, FiEye, FiPackage, FiKey, FiFile } from 'react-icons/fi';
+import { AuthService } from '../../service/api/api';
 
 const ReportsDashboard = () => {
   const [eventLogs, setEventLogs] = useState([]);
-  const [packageReports, setPackageReports] = useState([]);
-  const [selectedDateRange, setSelectedDateRange] = useState('all');
-  const [selectedModule, setSelectedModule] = useState('all');
-  const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' });
-  const [logsOpen, setLogsOpen] = useState(false);
-  const [packageData, setPackageData] = useState({
+  const [packageData] = useState({
     pending: [],
-      picked: [],
-      summary: {},
-      stats: {},
-      allPackages: []
-    });
+    picked: [],
+    summary: {},
+    stats: {},
+    allPackages: []
+  });
   const [activeTab, setActiveTab] = useState('all');
   const [expandedPackage, setExpandedPackage] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [logsOpen, setLogsOpen] = useState(false);
 
   useEffect(() => {
-      const fetchLogs = async () => {
-        try {
-          const logs = await AuthService.getEventLogs();
-          const formattedLogs = logs.map((log) => {
-            const username = log.user?.username || (log.user ? `User #${log.user}` : 'System');
-            const timestamp = new Date(log.timestamp).toLocaleString();
-            return `[${timestamp}] ${username} ${log.action.toLowerCase()}${log.object_type ? ` ${log.object_type}` : ''}${log.object_id ? ` #${log.object_id}` : ''}`;
-          });
-          setEventLogs(formattedLogs);
-        } catch (error) {
-          console.error('Failed to load event logs:', error);
-        }
-      };
-      fetchLogs();
-    }, []);
+    const fetchLogs = async () => {
+      try {
+        const logs = await AuthService.getEventLogs();
+        const formattedLogs = logs.map((log) => {
+          const username = log.user?.username || (log.user ? `User #${log.user}` : 'System');
+          const timestamp = new Date(log.timestamp).toLocaleString();
+          return `[${timestamp}] ${username} ${log.action.toLowerCase()}${log.object_type ? ` ${log.object_type}` : ''}${log.object_id ? ` #${log.object_id}` : ''}`;
+        });
+        setEventLogs(formattedLogs);
+      } catch (error) {
+        console.error('Failed to load event logs:', error);
+      }
+    };
+    fetchLogs();
+  }, []);
 
   // Enhanced package filtering
   const filteredPackages = packageData.allPackages.filter(pkg => {
@@ -188,7 +182,6 @@ const ReportsDashboard = () => {
       <div className="dashboard-header">
         <h2><FiFileText size={18} /> Package Reports Dashboard</h2>
         <button 
-          // onClick={handleExportAllPackages}
           style={{
             background: '#4CAF50',
             color: 'white',
@@ -406,7 +399,7 @@ const ReportsDashboard = () => {
         </div>
       </div>
 
- <div
+      <div
         className="system-logs-bar"
         style={{
           position: 'fixed',
@@ -449,7 +442,7 @@ const ReportsDashboard = () => {
           {eventLogs.length > 0 ? eventLogs.join('\n') : 'Loading logs...'}
         </div>
       </div>
-          </div>
+    </div>
   );
 };
 

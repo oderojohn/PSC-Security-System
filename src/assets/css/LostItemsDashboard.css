@@ -45,7 +45,7 @@ body.sidebar-collapsed .lost-items-dashboard {
   width: 90%;
   z-index: 10000;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-} */ */
+} */ 
 
 /* When sidebar is collapsed/expanded */
 .sidebar.active ~ .lost-items-dashboard {
