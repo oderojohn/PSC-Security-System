@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import "../../assets/css/modals.css"
+import React, { useState, useEffect } from 'react';
+import "../../assets/css/modals.css";
 
 const PackageModals = ({
   showDropModal,
@@ -22,6 +22,8 @@ const PackageModals = ({
   const [fieldErrors, setFieldErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [showPickForm, setShowPickForm] = useState(false);
+  const [cachedDescriptions, setCachedDescriptions] = useState([]);
+  const [showDescriptionDropdown, setShowDescriptionDropdown] = useState(false);
 
   // Phone number validation regex
   const phoneRegex = /^[0-9]{10,15}$/;
@@ -29,6 +31,32 @@ const PackageModals = ({
   const nameRegex = /^[a-zA-Z\s\-']{2,50}$/;
   // Description validation (at least 5 characters)
   const descRegex = /^.{5,500}$/;
+
+  // Load cached descriptions from localStorage on component mount
+  useEffect(() => {
+    const savedDescriptions = localStorage.getItem('cachedDescriptions');
+    if (savedDescriptions) {
+      setCachedDescriptions(JSON.parse(savedDescriptions));
+    }
+  }, []);
+
+  // Save to localStorage whenever cache changes
+  useEffect(() => {
+    localStorage.setItem('cachedDescriptions', JSON.stringify(cachedDescriptions));
+  }, [cachedDescriptions]);
+
+  const addToDescriptionCache = (description) => {
+    if (!description) return;
+    
+    setCachedDescriptions(prev => {
+      // Remove if already exists
+      const filtered = prev.filter(item => item !== description);
+      // Add to beginning of array
+      const updated = [description, ...filtered];
+      // Keep only last 10 items
+      return updated.slice(0, 10);
+    });
+  };
 
   const validateField = (fieldName, value) => {
     const errors = { ...fieldErrors };
@@ -68,18 +96,16 @@ const PackageModals = ({
         }
         break;
         
-     case 'memberId':
-    const memberIdRegex = /^(?:[A-Za-z]\d{3,18}[A-Za-z]?|\d{5,20})$/;
-
-      if (!value) {
-        errors.memberId = 'ID/Member number is required';
-      } else if (!memberIdRegex.test(value)) {
-        errors.memberId = 'Enter a valid ID (e.g., M1234, K1234A, or numeric ID)';
-      } else {
-        delete errors.memberId;
-      }
-      break;
-
+      case 'memberId':
+        const memberIdRegex = /^(?:[A-Za-z]\d{3,18}[A-Za-z]?|\d{5,20})$/;
+        if (!value) {
+          errors.memberId = 'ID/Member number is required';
+        } else if (!memberIdRegex.test(value)) {
+          errors.memberId = 'Enter a valid ID (e.g., M1234, K1234A, or numeric ID)';
+        } else {
+          delete errors.memberId;
+        }
+        break;
         
       default:
         break;
@@ -108,6 +134,7 @@ const PackageModals = ({
       setIsLoading(true);
       setLocalError(null);
       await handleDropPackage();
+      addToDescriptionCache(newDroppedPackage.description);
       setSuccess('Package dropped successfully!');
       setShowDropModal(false);
       setNewDroppedPackage({
@@ -226,14 +253,37 @@ const PackageModals = ({
 
                 <div className="form-group">
                   <label>Description</label>
-                  <input
-                    type="text"
-                    placeholder="e.g., Red box, A4 envelope"
-                    value={newDroppedPackage.description}
-                    onChange={(e) => handleInputChange(e, 'description', 'drop')}
-                    disabled={isLoading}
-                    className={fieldErrors.description ? 'error' : ''}
-                  />
+                  <div className="description-input-container">
+                    <input
+                      type="text"
+                      placeholder="e.g., Red box, A4 envelope"
+                      value={newDroppedPackage.description}
+                      onChange={(e) => {
+                        handleInputChange(e, 'description', 'drop');
+                        setShowDescriptionDropdown(true);
+                      }}
+                      onFocus={() => setShowDescriptionDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowDescriptionDropdown(false), 200)}
+                      disabled={isLoading}
+                      className={fieldErrors.description ? 'error' : ''}
+                    />
+                    {showDescriptionDropdown && cachedDescriptions.length > 0 && (
+                      <div className="description-dropdown">
+                        {cachedDescriptions.map((desc, index) => (
+                          <div 
+                            key={index}
+                            className="dropdown-item"
+                            onClick={() => {
+                              setNewDroppedPackage({...newDroppedPackage, description: desc});
+                              setShowDescriptionDropdown(false);
+                            }}
+                          >
+                            {desc}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   {fieldErrors.description && (
                     <span className="field-error">{fieldErrors.description}</span>
                   )}
@@ -370,70 +420,69 @@ const PackageModals = ({
             {!showPickForm ? (
               <>
                 <div className="modal-body" style={{ padding: '15px' }}>
-  <div className="details-grid" style={{
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '8px',
-    fontSize: '0.85rem'
-  }}>
-    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
-      <span className="detail-label" style={{ fontWeight: '600' }}>Code:</span>
-      <span className="detail-value code">{selectedPackage.code}</span>
-    </div>
-    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
-      <span className="detail-label" style={{ fontWeight: '600' }}>Type:</span>
-      <span className="detail-value">{selectedPackage.type === 'document' ? 'Document' : 'Package'}</span>
-    </div>
-    
-    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
-      <span className="detail-label" style={{ fontWeight: '600' }}>Shelf:</span>
-      <span className="detail-value shelf-number">{selectedPackage.shelf}</span>
-    </div>
-    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
-      <span className="detail-label" style={{ fontWeight: '600' }}>Status:</span>
-      <span className={`detail-value status-${selectedPackage.status}`}>
-        {selectedPackage.status}
-      </span>
-    </div>
-    
-    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
-      <span className="detail-label" style={{ fontWeight: '600' }}>Recipient:</span>
-      <span className="detail-value">{selectedPackage.recipient_name}</span>
-    </div>
-    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
-      <span className="detail-label" style={{ fontWeight: '600' }}>Recipient Phone:</span>
-      <span className="detail-value">{selectedPackage.recipient_phone}</span>
-    </div>
-    
-    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
-      <span className="detail-label" style={{ fontWeight: '600' }}>Dropped By:</span>
-      <span className="detail-value">{selectedPackage.dropped_by}</span>
-    </div>
-    {selectedPackage.picked_by && (
-      <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
-        <span className="detail-label" style={{ fontWeight: '600' }}>Picked By:</span>
-        <span className="detail-value">{selectedPackage.picked_by}</span>
-      </div>
-    )}
-    
-    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
-      <span className="detail-label" style={{ fontWeight: '600' }}>Date Dropped:</span>
-      <span className="detail-value">{new Date(selectedPackage.created_at).toLocaleString()}</span>
-    </div>
-    {selectedPackage.picked_at && (
-      <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
-        <span className="detail-label" style={{ fontWeight: '600' }}>Date Picked:</span>
-        <span className="detail-value">{new Date(selectedPackage.picked_at).toLocaleString()}</span>
-      </div>
-    )}
-    
-    <div className="detail-item" style={{ gridColumn: '1 / span 2', display: 'flex', gap: '5px' }}>
-      <span className="detail-label" style={{ fontWeight: '600' }}>Description:</span>
-      <span className="detail-value">{selectedPackage.description}</span>
-    </div>
-  </div>
-</div>
-                
+                  <div className="details-grid" style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '8px',
+                    fontSize: '0.85rem'
+                  }}>
+                    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
+                      <span className="detail-label" style={{ fontWeight: '600' }}>Code:</span>
+                      <span className="detail-value code">{selectedPackage.code}</span>
+                    </div>
+                    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
+                      <span className="detail-label" style={{ fontWeight: '600' }}>Type:</span>
+                      <span className="detail-value">{selectedPackage.type === 'document' ? 'Document' : 'Package'}</span>
+                    </div>
+                    
+                    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
+                      <span className="detail-label" style={{ fontWeight: '600' }}>Shelf:</span>
+                      <span className="detail-value shelf-number">{selectedPackage.shelf}</span>
+                    </div>
+                    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
+                      <span className="detail-label" style={{ fontWeight: '600' }}>Status:</span>
+                      <span className={`detail-value status-${selectedPackage.status}`}>
+                        {selectedPackage.status}
+                      </span>
+                    </div>
+                    
+                    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
+                      <span className="detail-label" style={{ fontWeight: '600' }}>Recipient:</span>
+                      <span className="detail-value">{selectedPackage.recipient_name}</span>
+                    </div>
+                    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
+                      <span className="detail-label" style={{ fontWeight: '600' }}>Recipient Phone:</span>
+                      <span className="detail-value">{selectedPackage.recipient_phone}</span>
+                    </div>
+                    
+                    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
+                      <span className="detail-label" style={{ fontWeight: '600' }}>Dropped By:</span>
+                      <span className="detail-value">{selectedPackage.dropped_by}</span>
+                    </div>
+                    {selectedPackage.picked_by && (
+                      <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
+                        <span className="detail-label" style={{ fontWeight: '600' }}>Picked By:</span>
+                        <span className="detail-value">{selectedPackage.picked_by}</span>
+                      </div>
+                    )}
+                    
+                    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
+                      <span className="detail-label" style={{ fontWeight: '600' }}>Date Dropped:</span>
+                      <span className="detail-value">{new Date(selectedPackage.created_at).toLocaleString()}</span>
+                    </div>
+                    {selectedPackage.picked_at && (
+                      <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
+                        <span className="detail-label" style={{ fontWeight: '600' }}>Date Picked:</span>
+                        <span className="detail-value">{new Date(selectedPackage.picked_at).toLocaleString()}</span>
+                      </div>
+                    )}
+                    
+                    <div className="detail-item" style={{ gridColumn: '1 / span 2', display: 'flex', gap: '5px' }}>
+                      <span className="detail-label" style={{ fontWeight: '600' }}>Description:</span>
+                      <span className="detail-value">{selectedPackage.description}</span>
+                    </div>
+                  </div>
+                </div>
 
                 {selectedPackage.status === 'pending' && (
                   <div className="modal-footer">

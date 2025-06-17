@@ -220,23 +220,25 @@ const PackageDashboard = () => {
         refreshData={fetchData} // Pass the refresh function
       />
       
-      <PackageModals 
-        showDropModal={showDropModal}
-        setShowDropModal={setShowDropModal}
-        showPickModal={showPickModal}
-        setShowPickModal={setShowPickModal}
-        newDroppedPackage={newDroppedPackage}
-        setNewDroppedPackage={setNewDroppedPackage}
-        handleDropPackage={handleDropPackage}
-        showDetailsModal={showDetailsModal}
-        setShowDetailsModal={setShowDetailsModal}
-        selectedPackage={selectedPackage}
-        pickedBy={pickedBy}
-        setPickedBy={setPickedBy}
-        handlePick={handlePick}
-        error={error}
-        setError={setError}
-      />
+    <PackageModals 
+  showDropModal={showDropModal}
+  setShowDropModal={setShowDropModal}
+  showPickModal={showPickModal}
+  setShowPickModal={setShowPickModal}
+  newDroppedPackage={newDroppedPackage}
+  setNewDroppedPackage={setNewDroppedPackage}
+  handleDropPackage={handleDropPackage}
+  showDetailsModal={showDetailsModal}
+  setShowDetailsModal={setShowDetailsModal}
+  selectedPackage={selectedPackage}
+  pickedBy={pickedBy}
+  setPickedBy={setPickedBy}
+  handlePick={handlePick}
+  error={error}
+  setError={setError}
+  setSuccess={setSuccess} 
+/>
+
     </div>
   );
 };

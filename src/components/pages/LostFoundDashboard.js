@@ -25,7 +25,7 @@ const LostFoundDashboard = () => {
         const dailyLostData = Array(7).fill(0);
         
         // Convert dates to day names (Mon, Tue, etc.)
-        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        //const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         
         // Process found items daily data
         weeklyReport.found_items_daily.forEach(item => {
