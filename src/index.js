@@ -5,16 +5,29 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { AuthProvider } from '../src/service/auth/AuthContext';
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
-  // <React.StrictMode>
-   <AuthProvider>
+// Check for existing tab
+const tabKey = 'myAppSingleTabKey';
+
+if (localStorage.getItem(tabKey)) {
+  // Another tab is open
+  alert('This application is already open in another tab. Please use that tab.');
+  window.location.href = 'about:blank'; // Redirect to blank page
+} else {
+  // Set the flag
+  localStorage.setItem(tabKey, 'locked');
+
+  // Clear the flag when tab is closed
+  window.addEventListener('beforeunload', () => {
+    localStorage.removeItem(tabKey);
+  });
+
+  // Render the app
+  const root = ReactDOM.createRoot(document.getElementById('root'));
+  root.render(
+    <AuthProvider>
       <App />
     </AuthProvider>
-  // </React.StrictMode>
-);
+  );
+}
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();

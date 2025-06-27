@@ -1,7 +1,7 @@
 .app {
   display: flex;
   font-family: 'Arial', sans-serif;
-  background-color: #f3f4f6;
+  background: var(--bg-primary);
   min-height: 100vh;
   flex-direction: column; /* Default to column layout on smaller screens */
 }
@@ -36,42 +36,7 @@
 
 
 
-/* Modal Styles */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
 
-.confirmation-modal {
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  width: 400px;
-  max-width: 90%;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
-}
 
 /* Alert Messages */
 .alert-message {

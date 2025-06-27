@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  FaHome,FaTag, FaFileAlt,
-  FaBars, FaTimes, FaChevronLeft
-} from 'react-icons/fa';//FaEnvelope,FaExclamationTriangle, FaShieldAlt,
+  FaHome, FaTag, FaFileAlt, FaBars, FaTimes, FaChevronLeft, 
+  FaExclamationTriangle, FaShieldAlt, FaChartLine
+} from 'react-icons/fa';
 import '../assets/css/Sidebar.css';
+import { useAuth } from '../service/auth/AuthContext';
 
 const Sidebar = () => {
+  const { user } = useAuth();
   const [isActive, setIsActive] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -26,6 +28,11 @@ const Sidebar = () => {
     setIsCollapsed(!isCollapsed);
   };
 
+  const hasRole = (allowedRoles) => {
+    if (!user || !user.role) return false;
+    return allowedRoles.includes(user.role);
+  };
+
   return (
     <>
       <button className="menu-toggle" onClick={toggleSidebar}>
@@ -38,55 +45,63 @@ const Sidebar = () => {
             {isCollapsed ? '' : <><FaHome /> <span>Dashboard</span></>}
           </div>
           <button className="collapse-btn" onClick={toggleCollapse}>
-            {isCollapsed ? <FaChevronLeft /> : <FaChevronLeft />}
+            <FaChevronLeft />
           </button>
         </div>
         <nav className="nav-links">
           <ul>
-            {/* <li>
-              <Link to="/lost-items">
-                <FaClipboardList /> <span>Lost Items/Cards</span>
-              </Link>
-            </li> */}
-            <li>
-              <Link to="/dropped-packages">
-                <FaTag /> <span>Drop Package</span>
-              </Link>
-            </li>
-            {/* <li>
-              <Link to="/events">
-                <FaEnvelope /> <span>Today's Events</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/ClampingDashboard">
-                <FaShieldAlt /> <span>Car Clamping</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/AnnouncementsDashboard">
-                <FaExclamationTriangle /> <span>Announcements</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/SecurityControlDashboard">
-                <FaShieldAlt /> <span>Security Control</span>
-              </Link>
-            </li> */}
-            <li>
-              <Link to="/ReportsDashboard">
-                <FaFileAlt /> <span>Reports</span>
-              </Link>
-            </li>
-            {/* <li>
-              <Link to="/ReportIssue">
-                <FaExclamationTriangle /> <span>Report an Issue</span>
-              </Link>
-            </li> */}
+            {/* Admin Dashboard Link */}
+            {hasRole(['ADMIN']) && (
+              <li>
+                <Link to="/">
+                  <FaChartLine /> <span>Admin Dashboard</span>
+                </Link>
+              </li>
+            )}
+
+            {hasRole(['ADMIN', 'STAFF', 'RECEPTION']) && (
+              <li>
+                <Link to="/dropped-packages">
+                  <FaTag /> <span>Drop Package</span>
+                </Link>
+              </li>
+            )}
+
+            {hasRole(['ADMIN', 'STAFF']) && (
+              <li>
+                <Link to="/SecurityControlDashboard">
+                  <FaShieldAlt /> <span>Security Control</span>
+                </Link>
+              </li>
+            )}
+
+            {hasRole(['STAFF']) && (
+              <li>
+                <Link to="/ReportIssue">
+                  <FaExclamationTriangle /> <span>Report an Issue</span>
+                </Link>
+              </li>
+            )}
+
+            {hasRole(['ADMIN']) && (
+              <li>
+                <Link to="/ReportIssue">
+                  <FaExclamationTriangle /> <span>Reported Issues</span>
+                </Link>
+              </li>
+            )}
+
+            {hasRole(['ADMIN']) && (
+              <li>
+                <Link to="/ReportsDashboard">
+                  <FaFileAlt /> <span>Reports</span>
+                </Link>
+              </li>
+            )}
           </ul>
         </nav>
         <div className="user-profile">
-          <span>User Name</span>
+          <span>{user?.username || 'User Name'}</span>
           <small>View profile</small>
         </div>
       </aside>

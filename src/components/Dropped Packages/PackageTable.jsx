@@ -65,6 +65,7 @@ const PackageTable = ({
   if (!data.length) return renderNoDataMessage();
 
   return (
+    
     <div className="table-container">
       <table className="items-table">
         <thead>

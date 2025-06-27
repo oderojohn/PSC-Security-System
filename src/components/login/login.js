@@ -19,29 +19,38 @@ const Login = () => {
     if (error) setError('');
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    // Don't submit if already loading
-    if (loading) return;
-    
-    setLoading(true);
-    setShake(false);
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  // Don't submit if already loading
+  if (loading) return;
+  
+  setLoading(true);
+  setShake(false);
 
-    try {
-      const data = await AuthService.login(credentials);
-      login(data.access, data.user);
-      localStorage.setItem('refresh_token', data.refresh);
-      navigate('/');
-    } catch (err) {
-      setError(err.message || 'Invalid username or password');
-      setShake(true);
-      // Clear inputs for security
-      setCredentials({ username: '', password: '' });
-    } finally {
-      setLoading(false);
+  try {
+    const data = await AuthService.login(credentials);
+    login(data.access, data.user);
+    localStorage.setItem('refresh_token', data.refresh);
+    
+    // Redirect based on user role
+    if (data.user.role === 'ADMIN') {
+      navigate('/');  // Admin goes to home/dashboard
+    } else if (data.user.role === 'STAFF' || data.user.role === 'RECEPTION') {
+      navigate('/dropped-packages');  // Staff goes to dropped packages
+    } else {
+      navigate('/');  // Default fallback
     }
-  };
+    
+  } catch (err) {
+    setError(err.message || 'Invalid username or password');
+    setShake(true);
+    // Clear inputs for security
+    setCredentials({ username: '', password: '' });
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="login-container">

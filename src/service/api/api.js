@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:8000/api/`;
+// const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:8000/api/`;
+const API_BASE_URL = `http://127.0.0.1:8000/api/`;
+
 
 // Axios instance
 const api = axios.create({
@@ -130,6 +132,7 @@ export const AuthService = {
     localStorage.setItem('access_token', access);
     localStorage.setItem('refresh_token', refresh);
     localStorage.setItem('user', JSON.stringify(user));
+    console.log("this is use3r data from sewrver ", user)
     return response.data;
   },
 
@@ -202,4 +205,86 @@ export const LostFoundService = {
     });
     return response.data;
   }
+};
+// API Service for all endpoints
+export const PhoneIssuesAPI = {
+  // Phone Extensions
+  getPhoneExtensions: async () => {
+    const response = await api.get('phone-extensions/');
+    return response.data;
+  },
+  createPhoneExtension: async (data) => {
+    const response = await api.post('phone-extensions/', data);
+    return response.data;
+  },
+  getPhoneExtension: async (id) => {
+    const response = await api.get(`phone-extensions/${id}/`);
+    return response.data;
+  },
+  updatePhoneExtension: async (id, data) => {
+    const response = await api.put(`phone-extensions/${id}/`, data);
+    return response.data;
+  },
+  deletePhoneExtension: async (id) => {
+    await api.delete(`phone-extensions/${id}/`);
+  },
+
+  // Reported Issues
+  getIssues: async (params = {}) => {
+    const response = await api.get('issues/', { params });
+    return response.data;
+  },
+  createIssue: async (data) => {
+    console.log("issue data ", data)
+    const response = await api.post('issues/', data);
+    return response.data;
+  },
+  getIssue: async (id) => {
+    const response = await api.get(`issues/${id}/`);
+    return response.data;
+  },
+  updateIssue: async (id, data) => {
+    const response = await api.put(`issues/${id}/`, data);
+    return response.data;
+  },
+  updateIssueStatus: async (id, status) => {
+    const response = await api.patch(`issues/${id}/status/`, { status });
+    return response.data;
+  },
+  deleteIssue: async (id) => {
+    await api.delete(`issues/${id}/`);
+  },
+
+  // Security Keys
+  getSecurityKeys: async (searchQuery = '') => {
+    const params = searchQuery ? { search: searchQuery } : {};
+    const response = await api.get('security-keys/', { params });
+    return response.data;
+  },
+  getSecurityKey: async (id) => {
+    const response = await api.get(`security-keys/${id}/`);
+    return response.data;
+  },
+  checkoutKey: async (id, holderData) => {
+    console.log("checkout ",holderData)
+    const response = await api.put(`security-keys/${id}/checkout/`, holderData);
+    return response.data;
+  },
+  returnKey: async (id, returnData = {}) => {
+    // If return_time not provided, server will use current time
+    const response = await api.put(`security-keys/${id}/return/`, returnData);
+    return response.data;
+  },
+  createSecurityKey: async (keyData) => {
+  console.log("checkout ",keyData)
+  const response = await api.post('security-keys/', keyData);
+  return response.data;
+
+},
+getKeyHistory: async (id) => {
+  const response = await api.get(`security-keys/${id}/history/`);
+  return response.data;
+},
+
+ 
 };
