@@ -11,7 +11,7 @@ const Dashboard = () => {
       <div className="dashboard-section">
       <div className="dashboard-header">
 
-        <h2>Package Delivery Dashboard</h2>
+        <h4>Package Delivery Dashboard</h4>
         </div>
         <PackageDashboard />
       </div>

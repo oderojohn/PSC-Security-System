@@ -25,6 +25,8 @@ const PhoneExtensionsDashboard = () => {
     return allowedRoles.includes(user.role);
   };
 
+  
+
   // Fetch extensions on component mount
   useEffect(() => {
     const fetchExtensions = async () => {

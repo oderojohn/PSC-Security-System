@@ -557,14 +557,14 @@
 
 
 /* Theme Modal Styles */
-.theme-buttons {
+.themme-buttons {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   margin: 15px 0;
 }
 
-.theme-btn {
+.themme-btn {
   border: none;
   border-radius: 8px;
   padding: 10px;
@@ -581,17 +581,17 @@
   align-items: center;
 }
 
-.theme-btn:hover {
+.themme-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.theme-btn.active {
+.themme-btn.active {
   transform: scale(1.05);
   box-shadow: 0 0 0 3px var(--primary-color);
 }
 
-.theme-btn.active::after {
+.themme-btn.active::after {
   content: '✓';
   position: absolute;
   top: 5px;
@@ -599,13 +599,13 @@
   font-size: 16px;
 }
 
-.theme-selection-container {
+.themme-selection-container {
   margin-top: 20px;
   padding-top: 20px;
   border-top: 1px solid var(--border-primary);
 }
 
-.theme-selection-container p {
+.themme-selection-container p {
   margin-bottom: 10px;
   color: var(--text-secondary);
 }
@@ -631,4 +631,11 @@
 
 .swal2-confirm:hover {
   background-color: var(--primary-hover) !important;
+}
+.navbar {
+  transition: transform 0.3s ease-in-out;
+}
+
+.navbar--hidden {
+  transform: translateY(-100%);
 }

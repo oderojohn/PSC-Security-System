@@ -26,7 +26,7 @@ const PackageModals = ({
   const [showDescriptionDropdown, setShowDescriptionDropdown] = useState(false);
 
   // Phone number validation regex
-  const phoneRegex = /^[0-9]{10,15}$/;
+  const phoneOrMemberRegex = /^[0-9]{10,15}$|^[A-Za-z]\d{1,4}[A-Za-z]?$/;
   // Name validation regex (letters, spaces, hyphens, apostrophes)
   const nameRegex = /^[a-zA-Z\s\-']{2,50}$/;
   // Description validation (at least 5 characters)
@@ -88,9 +88,8 @@ const PackageModals = ({
       case 'dropperPhone':
       case 'phone':
         if (!value) {
-          errors[fieldName] = 'Phone number is required';
-        } else if (!phoneRegex.test(value)) {
-          errors[fieldName] = 'Enter a valid phone number (10-15 digits)';
+          errors[fieldName] = 'Phone number or Member ID is required';
+        } else if (!phoneOrMemberRegex.test(value)) {
         } else {
           delete errors[fieldName];
         }
@@ -190,15 +189,19 @@ const PackageModals = ({
   };
 
   const handleInputChange = (e, fieldName, formType) => {
-    if (formType === 'drop') {
-      setNewDroppedPackage({ ...newDroppedPackage, [fieldName]: e.target.value });
-    } else if (formType === 'pick') {
-      setPickedBy({ ...pickedBy, [fieldName]: e.target.value });
-    }
-    
-    // Validate the field as user types
-    validateField(fieldName, e.target.value);
-  };
+  const rawValue = e.target.value;
+  const value = fieldName === 'description' ? rawValue : rawValue.toUpperCase();
+
+  if (formType === 'drop') {
+    setNewDroppedPackage({ ...newDroppedPackage, [fieldName]: value });
+  } else if (formType === 'pick') {
+    setPickedBy({ ...pickedBy, [fieldName]: value });
+  }
+
+  validateField(fieldName, value);
+};
+
+
 
   return (
     <>
@@ -307,7 +310,7 @@ const PackageModals = ({
                 </div>
 
                 <div className="form-group">
-                  <label>Recipient Phone</label>
+                  <label>Recipient Phone/Member NO</label>
                   <input
                     type="tel"
                     placeholder="e.g., 0712345678"
@@ -339,7 +342,7 @@ const PackageModals = ({
                 </div>
 
                 <div className="form-group">
-                  <label>Your Phone</label>
+                  <label>Your Phone/Member NO</label>
                   <input
                     type="tel"
                     placeholder="e.g., 0712345678"
@@ -451,7 +454,7 @@ const PackageModals = ({
                       <span className="detail-value">{selectedPackage.recipient_name}</span>
                     </div>
                     <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
-                      <span className="detail-label" style={{ fontWeight: '600' }}>Recipient Phone:</span>
+                      <span className="detail-label" style={{ fontWeight: '600' }}>Recipient No:</span>
                       <span className="detail-value">{selectedPackage.recipient_phone}</span>
                     </div>
                     
@@ -532,7 +535,7 @@ const PackageModals = ({
                 </div>
 
                 <div className="form-group">
-                  <label>Phone Number</label>
+                  <label>Phone Number/Member No</label>
                   <input
                     type="tel"
                     placeholder="Your active phone number"

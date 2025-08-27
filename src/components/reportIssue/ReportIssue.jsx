@@ -21,6 +21,8 @@ const ReportIssue = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAttachments, setShowAttachments] = useState(false);
+  const [success, setSuccess] = useState(null);
+  
 
   const hasRole = (allowedRoles) => {
     if (!user || !user.role) return false;
@@ -66,6 +68,8 @@ const ReportIssue = () => {
       alert(`Failed to create issue: ${err.message}`);
     } finally {
       setIsSubmitting(false);
+      setSuccess('Issue Submitted successfully!'); 
+
     }
   };
 
@@ -75,7 +79,9 @@ const ReportIssue = () => {
       setIssues(issues.map(issue => 
         issue.id === updatedIssue.id ? updatedIssue : issue
       ));
-      setSelectedIssue(updatedIssue); // Update the currently viewed issue
+      setSelectedIssue(updatedIssue);
+      setShowDetailsModal(false);
+      setSuccess('Updated successfully!'); 
     } catch (err) {
       alert(`Failed to update status: ${err.message}`);
     }
@@ -97,12 +103,45 @@ const ReportIssue = () => {
       attachments: newAttachments
     });
   };
+  useEffect(() => {
+      if (error || success) {
+        const timer = setTimeout(() => {
+          setError(null);
+          setSuccess(null);
+        }, 5000);
+        return () => clearTimeout(timer);
+      }
+    }, [error, success]);
 
   if (loading) return <div className="loading">Loading issues...</div>;
   if (error) return <div className="error">Error: {error}</div>;
 
   return (
     <div className="lost-items-dashboard">
+      {/* Notification Messages */}
+      {error && (
+        <div className="notification error">
+          <div className="notification-content">
+            <span className="notification-icon">⚠️</span>
+            <span>{error}</span>
+          </div>
+          <button className="notification-close" onClick={() => setError(null)}>
+            &times;
+          </button>
+        </div>
+      )}
+      
+      {success && (
+        <div className="notification success">
+          <div className="notification-content">
+            <span className="notification-icon">✓</span>
+            <span>{success}</span>
+          </div>
+          <button className="notification-close" onClick={() => setSuccess(null)}>
+            &times;
+          </button>
+        </div>
+      )}
       {/* Header and controls */}
       <div className="dashboard-header">
         <h2><FiAlertCircle size={20} /> Report an Issue</h2>

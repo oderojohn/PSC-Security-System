@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import PackageHeader from './PackageHeader';
 import PackageStats from './PackageStats';
 import PackageTable from './PackageTable';
 import PackageModals from './PackageModals';
@@ -190,11 +189,11 @@ const PackageDashboard = () => {
         </div>
       )}
 
-      <PackageHeader 
+      {/* <PackageHeader 
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         activeTab={activeTab}
-      />
+      /> */}
       
       <PackageStats 
         activeTab={activeTab} 
@@ -217,7 +216,7 @@ const PackageDashboard = () => {
           setSelectedPackage(pkg);
           setShowDetailsModal(true);
         }}
-        refreshData={fetchData} // Pass the refresh function
+        refreshData={fetchData} 
       />
       
     <PackageModals 

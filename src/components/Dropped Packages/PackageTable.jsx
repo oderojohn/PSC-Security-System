@@ -70,7 +70,7 @@ const PackageTable = ({
       <table className="items-table">
         <thead>
           <tr>
-            <th>#</th> {/* Added number column header */}
+            <th>#</th> 
             <th>T</th>
             <th>Description</th>
             <th>Recipient Name</th>

@@ -615,7 +615,7 @@ body.sidebar-collapsed .lost-items-dashboard {
   }
   
   .table-container {
-    max-height: 50vh;
+    max-height: 75vh;
   }
 }
 

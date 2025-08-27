@@ -1,6 +1,7 @@
 import React from 'react';
 import { FiPackage, FiSearch } from 'react-icons/fi';
 
+
 const LostFoundHeader = ({ searchTerm, setSearchTerm, activeTab }) => (
   <div className="dashboard-header">
     <h2>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiPlus, FiList } from 'react-icons/fi';
+import { FiPlus, FiList, FiSearch } from 'react-icons/fi';
 
 const PackageStats = ({
   activeTab,
@@ -7,7 +7,9 @@ const PackageStats = ({
   droppedCount,
   pickedCount,
   setShowDropModal,
-  setShowPickModal
+  setShowPickModal,
+  searchTerm,
+  setSearchTerm
 }) => {
   return (
     <div className="dashboard-toolbar">
@@ -28,6 +30,16 @@ const PackageStats = ({
       </div>
 
       <div className="right-controls">
+        <div className="search-bar">
+          <FiSearch />
+          <input
+            type="text"
+            placeholder={`Search ${activeTab === 'drop' ? 'dropped' : 'picked'} packages...`}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        
         <div className="tab-controls">
           <button
             className={`tab-button ${activeTab === 'drop' ? 'active' : ''}`}

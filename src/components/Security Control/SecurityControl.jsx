@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiKey, FiUser, FiCheck, FiPlus, FiClock, FiPhone, FiInfo, FiChevronUp, FiChevronDown, FiX } from 'react-icons/fi';
 import { PhoneIssuesAPI } from '../../service/api/api';
 import { useAuth } from '../../service/auth/AuthContext';
@@ -17,6 +17,7 @@ const SecurityControlDashboard = () => {
   const [selectedKey, setSelectedKey] = useState(null);
   const [keyHistory, setKeyHistory] = useState([]);
   const [showNotes, setShowNotes] = useState(false);
+  const [success, setSuccess] = useState(null);
   
   // Form states
   const [checkoutDetails, setCheckoutDetails] = useState({
@@ -42,22 +43,22 @@ const SecurityControlDashboard = () => {
     return allowedRoles.includes(user.role);
   };
 
-  // Fetch keys on component mount and when search query changes
-  useEffect(() => {
-    fetchKeys();
-  }, []);
-
-  const fetchKeys = async () => {
+  // Fetch keys on component mount
+  const fetchKeys = useCallback(async (query = '') => {
     try {
       setLoading(true);
-      const response = await PhoneIssuesAPI.getSecurityKeys(searchQuery);
+      const response = await PhoneIssuesAPI.getSecurityKeys(query);
       setKeys(response);
       setLoading(false);
     } catch (err) {
       setError(err.message);
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchKeys();
+  }, [fetchKeys]);
 
   const fetchKeyHistory = async (keyId) => {
     try {
@@ -75,6 +76,7 @@ const SecurityControlDashboard = () => {
       const response = await PhoneIssuesAPI.createSecurityKey(newKey);
       setKeys([...keys, response]);
       setShowAddModal(false);
+      setSuccess('Key Added successfully!');
       setNewKey({
         key_id: '',
         location: '',
@@ -102,6 +104,7 @@ const SecurityControlDashboard = () => {
       ));
       
       setShowCheckoutModal(false);
+      setSuccess('Checkout successfully!');
       setCheckoutDetails({
         holderName: '',
         holderRole: 'staff',
@@ -110,8 +113,8 @@ const SecurityControlDashboard = () => {
       });
       setShowNotes(false);
     } catch (err) {
-      alert(`Checkout failed: ${err.message}`);
-    }
+      setError(`Checkout failed: ${err.message}`);
+    };
   };
 
   const handleReturn = async (id) => {
@@ -127,24 +130,60 @@ const SecurityControlDashboard = () => {
       ));
       
       setShowReturnModal(false);
+      setSuccess('Key Returned successfully!');
       setReturnDetails({
         notes: ''
       });
     } catch (err) {
-      alert(`Return failed: ${err.message}`);
+      setError(`Return failed: ${err.message}`);
     }
   };
 
   const handleSearch = (e) => {
     e.preventDefault();
-    fetchKeys();
+    fetchKeys(searchQuery);
   };
+
+  useEffect(() => {
+    if (error || success) {
+      const timer = setTimeout(() => {
+        setError(null);
+        setSuccess(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, success]);
 
   if (loading) return <div className="loading">Loading keys...</div>;
   if (error) return <div className="error">Error: {error}</div>;
 
   return (
     <div className="lost-items-dashboard">
+      {/* Notification Messages */}
+      {error && (
+        <div className="notification error">
+          <div className="notification-content">
+            <span className="notification-icon">⚠️</span>
+            <span>{error}</span>
+          </div>
+          <button className="notification-close" onClick={() => setError(null)}>
+            &times;
+          </button>
+        </div>
+      )}
+      
+      {success && (
+        <div className="notification success">
+          <div className="notification-content">
+            <span className="notification-icon">✓</span>
+            <span>{success}</span>
+          </div>
+          <button className="notification-close" onClick={() => setSuccess(null)}>
+            &times;
+          </button>
+        </div>
+      )}
+      
       <div className="dashboard-header">
         <h2><FiKey size={20} /> Security Key Control</h2>
         <div className="header-controls">

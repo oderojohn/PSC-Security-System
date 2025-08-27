@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import LostFoundHeader from './LostItems/LostFoundHeader';
 import LostFoundStats from './LostItems/LostFoundStats';
-import LostFoundTable from './LostItems/LostFoundTable';
+import LostFoundTable from './LostItems/tables/LostFoundTable';
 import LostFoundModals from './LostItems/LostFoundModals';
 import { LostFoundService } from '../service/api/api';
 import '../assets/css/LostItemsDashboard.css';
@@ -11,7 +11,7 @@ const LostItemsDashboard = () => {
   const [foundItems, setFoundItems] = useState([]);
   const [potentialMatches, setPotentialMatches] = useState([]);
   const [stats, setStats] = useState({ lost_count: 0, found_count: 0, pending_count: 0 });
-
+  const [pickedItems, setPickedItems] = useState([]);
   const [showAddLostModal, setShowAddLostModal] = useState(false);
   const [showAddFoundModal, setShowAddFoundModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -47,16 +47,15 @@ const LostItemsDashboard = () => {
   const [activeTab, setActiveTab] = useState('lost');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchData();
-  }, [activeTab, searchTerm]);
-
-  // 👇 Fetch matches when tab is 'lost'
-  useEffect(() => {
-    if (activeTab === 'lost') {
-      fetchPotentialMatches();
+  const fetchRecentPickups = async () => {
+    try {
+      const recentPickups = await LostFoundService.getRecentPickups();
+      setPickedItems(recentPickups);
+      console.log('Fetched recent pickups:', recentPickups);
+    } catch (error) {
+      console.error('Error fetching recent pickups:', error);
     }
-  }, [activeTab]);
+  };
 
   const fetchData = async () => {
     try {
@@ -68,7 +67,9 @@ const LostItemsDashboard = () => {
         setLostItems(lostItemsData);
       } else {
         const foundItemsData = await LostFoundService.getFoundItems(params);
-        setFoundItems(foundItemsData);
+        // Filter out claimed items from found items
+        const unclaimedFoundItems = foundItemsData.filter(item => item.status !== 'claimed');
+        setFoundItems(unclaimedFoundItems);
       }
 
       const statsData = await LostFoundService.getStats();
@@ -82,84 +83,79 @@ const LostItemsDashboard = () => {
 
   const fetchPotentialMatches = async () => {
     try {
-      const allMatches = await LostFoundService.getPotentialMatchesForLostItem(); // marches endpoiont 
+      const allMatches = await LostFoundService.getPotentialMatchesForLostItem();
       setPotentialMatches(allMatches);
-      console.log("this are marches", allMatches)
+      console.log("these are matches", allMatches);
     } catch (error) {
       console.error('Error fetching potential matches:', error);
     }
   };
 
- 
-
-  const handleAddLostItem = async () => {
-    try {
-      const createdItem = await LostFoundService.createLostItem({
-        ...newLostItem,
-        status: 'pending'
-      });
-      setLostItems([...lostItems, createdItem]);
-      setShowAddLostModal(false);
-      setNewLostItem({
-        type: 'card',
-        card_last_four: '',
-        item_name: '',
-        description: '',
-        place_lost: '',
-        reporter_member_id: '',
-        reporter_phone: '',
-        owner_name: ''
-      });
-      fetchData();
-    } catch (error) {
-      console.error('Error creating lost item:', error);
+  useEffect(() => {
+    fetchData();
+    if (activeTab === 'lost') {
+      fetchPotentialMatches();
+    } else if (activeTab === 'picked') {
+      fetchRecentPickups();
     }
-  };
+  }, [activeTab, searchTerm]);
 
-  const handleAddFoundItem = async () => {
-    try {
-      const createdItem = await LostFoundService.createFoundItem({
-        ...newFoundItem,
-        status: 'found'
-      });
-      setFoundItems([...foundItems, createdItem]);
-      setShowAddFoundModal(false);
-      setNewFoundItem({
-        type: 'card',
-        card_last_four: '',
-        item_name: '',
-        description: '',
-        place_found: '',
-        finder_name: '',
-        finder_phone: '',
-        owner_name: ''
-      });
-      fetchData();
-    } catch (error) {
-      console.error('Error creating found item:', error);
+  useEffect(() => {
+    if (activeTab === 'lost') {
+      fetchPotentialMatches();
     }
-  };
+  }, [activeTab]);
+
+const handleAddLostItem = async () => {
+  await fetchData();
+};
+
+const handleAddFoundItem = async (formData) => {
+  try {
+    const config = {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    };
+
+    const createdItem = await LostFoundService.createFoundItem(formData, config);
+    setFoundItems([...foundItems, createdItem]);
+    setShowAddFoundModal(false);
+    fetchData();
+  } catch (error) {
+    console.error('Error creating found item:', error);
+    // Handle error appropriately
+  }
+};
 
   const markAsFound = async (id) => {
     try {
       await LostFoundService.markAsFound(id);
       fetchData();
+      if (activeTab === 'lost') {
+        fetchPotentialMatches();
+      }
     } catch (error) {
       console.error('Error marking item as found:', error);
     }
   };
 
+  const markAsPicked = async (id) => {
+    try {
+      await LostFoundService.pickFoundItem(id, pickedBy);
+      setShowDetailsModal(false);
+      setPickedBy({ memberId: '', name: '', phone: '' });
+      setSelectedItem(null);
+      fetchData();
+      fetchRecentPickups();
+    } catch (error) {
+      console.error('Error picking item:', error);
+    }
+  };
+
   const handlePick = async () => {
     if (selectedItem) {
-      try {
-        await LostFoundService.pickFoundItem(selectedItem.id, pickedBy);
-        setShowDetailsModal(false);
-        setPickedBy({ memberId: '', name: '', phone: '' });
-        setSelectedItem(null);
-        fetchData();
-      } catch (error) {
-        console.error('Error picking item:', error);
-      }
+      await markAsPicked(selectedItem.id);
     }
   };
 
@@ -173,8 +169,9 @@ const LostItemsDashboard = () => {
           item.place_lost?.toLowerCase()?.includes(search)
         )) ||
         item.owner_name?.toLowerCase()?.includes(search) ||
-        item.reporter_member_id?.toLowerCase()?.includes(search))
-    );
+        item.reporter_member_id?.toLowerCase()?.includes(search)
+      )
+      );
   });
 
   const filteredFoundItems = foundItems.filter(item => {
@@ -187,8 +184,9 @@ const LostItemsDashboard = () => {
           item.place_found?.toLowerCase()?.includes(search)
         )) ||
         item.owner_name?.toLowerCase()?.includes(search) ||
-        item.finder_name?.toLowerCase()?.includes(search))
-    );
+        item.finder_name?.toLowerCase()?.includes(search)
+    
+      )  );
   });
 
   return (
@@ -200,65 +198,74 @@ const LostItemsDashboard = () => {
       />
 
       <LostFoundStats
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        lostItems={stats.lost_count}
-        pendingItems={stats.pending_count}
-        setShowAddLostModal={setShowAddLostModal}
-        setShowAddFoundModal={setShowAddFoundModal}
-        showMatches={showMatches}
-        setShowMatches={setShowMatches}
-        fetchPotentialMatches={fetchPotentialMatches}
-      />
+  activeTab={activeTab}
+  setActiveTab={setActiveTab}
+  lostItems={{ cards: stats.lost_cards_count || 0, items: stats.lost_items_count || 0 }}
+  foundItems={{ cards: stats.found_cards_count || 0, items: stats.found_items_count || 0 }}
+  pendingItems={stats.pending_count}
+  showMatches={showMatches}
+  setShowMatches={setShowMatches}
+  fetchPotentialMatches={fetchPotentialMatches}
+  onLostSubmit={handleAddLostItem}
+  onFoundSubmit={handleAddFoundItem}
+/>
 
       {loading ? (
-            <div className="lost-items-dashboard">
-
         <div className="loading-spinner"></div>
-        </div>
       ) : (
-    <LostFoundTable
-    activeTab={activeTab}
-    filteredLostItems={filteredLostItems}
-    filteredFoundItems={filteredFoundItems}
-    markAsFound={markAsFound}
-    searchTerm={searchTerm}
-    setSearchTerm={setSearchTerm}
-    potentialMatches={potentialMatches}
-    showMatches={showMatches}
-    setShowMatches={setShowMatches}
-    fetchPotentialMatches={fetchPotentialMatches}
-    onViewDetails={(item) => {
-      setSelectedItem(item);
-      setShowDetailsModal(true);
-    }}
-    />
-
+        <LostFoundTable
+          activeTab={activeTab}
+          filteredPickedItems={pickedItems}
+          filteredLostItems={filteredLostItems}
+          filteredFoundItems={filteredFoundItems}
+          markAsFound={markAsFound}
+          markAsPicked={markAsPicked}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          potentialMatches={potentialMatches}
+          showMatches={showMatches}
+          setShowMatches={setShowMatches}
+          fetchPotentialMatches={fetchPotentialMatches}
+          onViewDetails={(item) => {
+            setSelectedItem(item);
+            setShowDetailsModal(true);
+          }}
+        />
       )}
 
       <LostFoundModals
-        showAddLostModal={showAddLostModal}
-        setShowAddLostModal={setShowAddLostModal}
-        showAddFoundModal={showAddFoundModal}
-        setShowAddFoundModal={setShowAddFoundModal}
-        newLostItem={newLostItem}
-        setNewLostItem={setNewLostItem}
-        newFoundItem={newFoundItem}
-        setNewFoundItem={setNewFoundItem}
-        handleAddLostItem={handleAddLostItem}
-        handleAddFoundItem={handleAddFoundItem}
-        showDetailsModal={showDetailsModal}
-        setShowDetailsModal={setShowDetailsModal}
-        selectedItem={selectedItem}
-        pickedBy={pickedBy}
-        setPickedBy={setPickedBy}
-        handlePick={handlePick}
-        showPickupForm={showPickupForm}
-        setShowPickupForm={setShowPickupForm}
-        showMatchesModal={showMatchesModal}
-        setShowMatchesModal={setShowMatchesModal}
-        potentialMatches={potentialMatches}
-      />
+  showAddLostModal={showAddLostModal}
+  setShowAddLostModal={setShowAddLostModal}
+  showAddFoundModal={showAddFoundModal}
+  setShowAddFoundModal={setShowAddFoundModal}
+  newLostItem={newLostItem}
+  setNewLostItem={setNewLostItem}
+  newFoundItem={newFoundItem}
+  setNewFoundItem={setNewFoundItem}
+
+  // ✅ Pass refreshers properly
+  onLostSubmit={async () => {
+    await fetchData();      // refresh after lost submit
+    setShowAddLostModal(false); // close modal
+  }}
+  onFoundSubmit={async () => {
+    await fetchData();      // refresh after found submit
+    setShowAddFoundModal(false);
+  }}
+
+  showDetailsModal={showDetailsModal}
+  setShowDetailsModal={setShowDetailsModal}
+  selectedItem={selectedItem}
+  pickedBy={pickedBy}
+  setPickedBy={setPickedBy}
+  handlePick={handlePick}
+  showPickupForm={showPickupForm}
+  setShowPickupForm={setShowPickupForm}
+  showMatchesModal={showMatchesModal}
+  setShowMatchesModal={setShowMatchesModal}
+  potentialMatches={potentialMatches}
+/>
+
     </div>
   );
 };

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FaHome, FaTag, FaFileAlt, FaBars, FaTimes, FaChevronLeft, 
-  FaExclamationTriangle, FaShieldAlt, FaChartLine
+  FaExclamationTriangle, FaShieldAlt, FaChartLine,FaClipboardList
 } from 'react-icons/fa';
 import '../assets/css/Sidebar.css';
 import { useAuth } from '../service/auth/AuthContext';
@@ -66,6 +66,14 @@ const Sidebar = () => {
                 </Link>
               </li>
             )}
+            
+               {hasRole(['ADMIN']) && (
+              <li>
+                <Link to="/lost-found">
+                  <FaClipboardList /> <span>Lost & Found</span>
+                </Link>
+              </li>
+            )}
 
             {hasRole(['ADMIN', 'STAFF']) && (
               <li>
@@ -90,6 +98,9 @@ const Sidebar = () => {
                 </Link>
               </li>
             )}
+
+         
+            
 
             {hasRole(['ADMIN']) && (
               <li>
