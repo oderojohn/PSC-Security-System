@@ -159,13 +159,26 @@ export const AuthService = {
 
 // LostFoundService
 export const LostFoundService = {
+  // 🔹 Lost Items
   getLostItems: async (params = {}) => {
     const response = await api.get('items/lost/', { params });
     return response.data;
   },
+  getLostCards: async (params = {}) => {
+    const response = await api.get('items/lost/', {
+      params: { ...params, type: 'card' }
+    });
+    return response.data;
+  },
+  getLostNonCards: async (params = {}) => {
+    const response = await api.get('items/lost/', {
+      params: { ...params, type: 'item' }
+    });
+    return response.data;
+  },
 
   getPotentialMatchesForLostItem: async () => {
-    const response = await api.get(`/items/lost/potential_matches/`);
+    const response = await api.get(`/items/found/generate_matches/`);
     return response.data;
   },
 
@@ -179,13 +192,26 @@ export const LostFoundService = {
     return response.data;
   },
 
+  // 🔹 Found Items
   getFoundItems: async (params = {}) => {
     const response = await api.get('/items/found/', { params });
     return response.data;
   },
+  getFoundCards: async (params = {}) => {
+    const response = await api.get('/items/found/', {
+      params: { ...params, type: 'card' }
+    });
+    return response.data;
+  },
+  getFoundNonCards: async (params = {}) => {
+    const response = await api.get('/items/found/', {
+      params: { ...params, type: 'item' }
+    });
+    return response.data;
+  },
 
   getPotentialMatchesForFoundItem: async (itemId) => {
-    const response = await api.get(`/items/lost/potential_matches/`);
+    const response = await api.get(`/items/found/generate_matches/`);
     return response.data;
   },
 
@@ -199,13 +225,16 @@ export const LostFoundService = {
     return response.data;
   },
 
+  // 🔹 Reports
   getFoundWeeklyReport: async (weeks = 2) => {
     const response = await api.get(`/items/found/weekly_report/`, {
       params: { weeks }
     });
     return response.data;
   },
-   getRecentPickups: async () => {
+
+  // 🔹 Pickups
+  getRecentPickups: async () => {
     try {
       const response = await api.get('/items/pickuplogs/pickuphistory/');
       console.log('Recently picked items data:', response.data);
@@ -216,6 +245,7 @@ export const LostFoundService = {
     }
   }
 };
+
 // API Service for all endpoints
 export const PhoneIssuesAPI = {
   // Phone Extensions

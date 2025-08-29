@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { FiEye, FiCheck, FiX } from 'react-icons/fi';
+import "../ok.css";
 
 const ItemsTable = ({ items, columns, onViewDetails, isLost, isFound, onMarkAsPicked, showType = 'all' }) => {
   const [selectedItem, setSelectedItem] = useState(null);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   const safeText = (val, fallback = 'N/A') => {
     if (val === null || val === undefined) return fallback;
@@ -21,7 +24,6 @@ const ItemsTable = ({ items, columns, onViewDetails, isLost, isFound, onMarkAsPi
   };
 
   // Filter items based on showType prop
-  // Example filtering
   const filteredItems = items.filter(item => {
     if (showType === 'all') return true;
 
@@ -37,19 +39,25 @@ const ItemsTable = ({ items, columns, onViewDetails, isLost, isFound, onMarkAsPi
     return true;
   });
 
-
   const sortedItems = sortItemsByDate(filteredItems);
 
-  // Define dynamic columns based on showType
+  // Define dynamic columns based on type
   const cardColumns = [
     { header: 'Type', key: 'type' },
     { header: 'Card Details', key: 'card_last_four' },
-    { header: 'Email', key: 'reporter_email' },
+    { header: 'Reporter Email', key: 'reporter_email' },
     { header: 'Date Reported', key: 'date_reported' },
     { header: 'Status', key: 'status' }
   ];
 
   const activeColumns = showType === 'cards' ? cardColumns : columns;
+
+  // Function to open image modal
+  const openImageModal = (imageUrl, e) => {
+    e.stopPropagation();
+    setSelectedImage(imageUrl);
+    setShowImageModal(true);
+  };
 
   return (
     <div>
@@ -75,7 +83,8 @@ const ItemsTable = ({ items, columns, onViewDetails, isLost, isFound, onMarkAsPi
                   onMarkAsPicked={onMarkAsPicked}
                   safeText={safeText}
                   showType={showType}
-                  onRowClick={setSelectedItem} // pass modal opener
+                  onRowClick={setSelectedItem}
+                  onViewImage={openImageModal}
                 />
               ))
             ) : (
@@ -91,7 +100,7 @@ const ItemsTable = ({ items, columns, onViewDetails, isLost, isFound, onMarkAsPi
         </table>
       </div>
 
-      {/* Modal */}
+      {/* Item Details Modal */}
       {selectedItem && (
         <div className="modal-overlay" onClick={() => setSelectedItem(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -104,7 +113,7 @@ const ItemsTable = ({ items, columns, onViewDetails, isLost, isFound, onMarkAsPi
                 <>
                   <p><strong>Type:</strong> 💳 Card</p>
                   <p><strong>Card Details:</strong> {safeText(selectedItem.card_last_four)}</p>
-                  <p><strong>Email:</strong> {safeText(selectedItem.reporter_email, 'No email')}</p>
+                  <p><strong>Email:</strong> {safeText(selectedItem.reporter_email || selectedItem.finder_email, 'No email')}</p>
                   <p><strong>Date Reported:</strong> {selectedItem.date_reported ? new Date(selectedItem.date_reported).toLocaleString() : 'N/A'}</p>
                   <p><strong>Status:</strong> {selectedItem.status || 'pending'}</p>
                 </>
@@ -113,13 +122,50 @@ const ItemsTable = ({ items, columns, onViewDetails, isLost, isFound, onMarkAsPi
                   <p><strong>Type:</strong> 🧳 Item</p>
                   <p><strong>Name:</strong> {safeText(selectedItem.item_name, 'Unnamed')}</p>
                   <p><strong>Owner:</strong> {safeText(selectedItem.owner_name, 'Unknown')}</p>
-                  <p><strong>Place Lost:</strong> {safeText(selectedItem.place_lost, 'Unknown')}</p>
-                  <p><strong>Phone:</strong> {safeText(selectedItem.reporter_phone, 'No phone')}</p>
-                  <p><strong>Email:</strong> {safeText(selectedItem.reporter_email, 'No email')}</p>
+                  <p><strong>Place:</strong> 
+                    {safeText(selectedItem.place_lost || selectedItem.place_found, 'Unknown')}
+                  </p>
+                  <p><strong>Phone:</strong> {safeText(selectedItem.reporter_phone || selectedItem.finder_phone, 'No phone')}</p>
+                  <p><strong>Email:</strong> {safeText(selectedItem.reporter_email || selectedItem.finder_email, 'No email')}</p>
                   <p><strong>Date Reported:</strong> {selectedItem.date_reported ? new Date(selectedItem.date_reported).toLocaleString() : 'N/A'}</p>
                   <p><strong>Status:</strong> {selectedItem.status || 'pending'}</p>
+                  
+                  {/* Show photo in details modal if available */}
+                  {selectedItem.photo && (
+                    <div className="photo-container">
+                      <p><strong>Photo:</strong></p>
+                      <img 
+                        src={selectedItem.photo} 
+                        alt="Item" 
+                        className="item-photo"
+                        onClick={(e) => openImageModal(selectedItem.photo, e)}
+                        style={{ cursor: 'pointer', maxWidth: '200px', maxHeight: '200px' }}
+                      />
+                      <p className="photo-hint">Click to view larger</p>
+                    </div>
+                  )}
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Modal */}
+      {showImageModal && (
+        <div className="modal-overlay" onClick={() => setShowImageModal(false)}>
+          <div className="modal-content image-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowImageModal(false)}>
+              <FiX />
+            </button>
+            <h2>Item Photo</h2>
+            <div className="modal-body">
+              <img 
+                src={selectedImage} 
+                alt="Item" 
+                className="enlarged-photo"
+                style={{ maxWidth: '100%', maxHeight: '80vh' }}
+              />
             </div>
           </div>
         </div>
@@ -128,51 +174,62 @@ const ItemsTable = ({ items, columns, onViewDetails, isLost, isFound, onMarkAsPi
   );
 };
 
-const TableRow = ({ item, isFound, onViewDetails, onMarkAsPicked, safeText, showType }) => {
+const TableRow = ({ item, isFound, onViewDetails, onMarkAsPicked, safeText, showType, onViewImage }) => {
   return (
     <tr
-      onClick={() => onViewDetails(item)} // 🔥 Row click opens modal
+      onClick={() => onViewDetails(item)}
       style={{ cursor: 'pointer' }}
     >
       {showType === 'cards' ? (
         <>
           <td>💳 Card</td>
           <td>{safeText(item.card_last_four)}</td>
-          <td>{safeText(item.reporter_email, 'No email')}</td>
+          <td>{safeText(item.reporter_email || item.finder_email, 'No email')}</td>
           <td>{item.date_reported ? new Date(item.date_reported).toLocaleString() : 'N/A'}</td>
           <td>
-            <span className={`status-badge ${item.status || 'pending'}`}>
-              {item.status || 'pending'}
+            <span className={`status-badge ${item.status || 'found'}`}>
+              {item.status || 'found'}
             </span>
           </td>
         </>
       ) : (
         <>
           <td>{item.displayNumber || 'N/A'}</td>
-          <td>{item.type === 'item' ? '💳 Card' : '🧳 Item'}</td>
-          <td>
-            {item.type === 'item'
-              ? safeText(item.card_last_four)
-              : safeText(item.item_name, 'Unnamed')}
-          </td>
+          <td>{item.type === 'card' ? '💳 Card' : '🧳 Item'}</td>
+          <td>{safeText(item.item_name || item.card_last_four, 'Unnamed')}</td>
           <td>{safeText(item.owner_name, 'Unknown')}</td>
-          <td>{safeText(item.place_lost, 'Unknown')}</td>
-          <td>{safeText(item.reporter_phone, 'No phone')}</td>
-          <td>{safeText(item.reporter_email, 'No email')}</td>
+          <td>{safeText(item.place_lost || item.place_found, 'Unknown')}</td>
+          <td>{safeText(item.reporter_phone || item.finder_phone, 'No phone')}</td>
+
+          {/* ✅ Updated: Show button to view image in modal */}
+          <td>
+            {item.photo ? (
+              <button
+                className="btn btn-sm btn-outline-primary"
+                onClick={(e) => onViewImage(item.photo, e)}
+              >
+                View Photo
+              </button>
+            ) : (
+              "No photo"
+            )}
+          </td>
+
           <td>{item.date_reported ? new Date(item.date_reported).toLocaleString() : 'N/A'}</td>
           <td>
-            <span className={`status-badge ${item.status || 'pending'}`}>
-              {item.status || 'pending'}
+            <span className={`status-badge ${item.status || 'found'}`}>
+              {item.status || 'found'}
             </span>
           </td>
         </>
       )}
+
       <td>
         <button
           className="btn btn-sm btn-info"
           onClick={(e) => {
-            e.stopPropagation(); // prevent row click
-            onViewDetails(item); // same modal
+            e.stopPropagation();
+            onViewDetails(item);
           }}
         >
           <FiEye /> View
@@ -182,7 +239,7 @@ const TableRow = ({ item, isFound, onViewDetails, onMarkAsPicked, safeText, show
           <button
             className="btn btn-sm btn-success"
             onClick={(e) => {
-              e.stopPropagation(); // prevent row click
+              e.stopPropagation();
               onMarkAsPicked(item.id);
             }}
           >
@@ -193,6 +250,5 @@ const TableRow = ({ item, isFound, onViewDetails, onMarkAsPicked, safeText, show
     </tr>
   );
 };
-
 
 export default ItemsTable;

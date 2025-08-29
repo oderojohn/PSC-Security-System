@@ -44,7 +44,7 @@ const LostItemsDashboard = () => {
   });
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('lost');
+  const [activeTab, setActiveTab] = useState('lost-items');
   const [loading, setLoading] = useState(true);
 
   const fetchRecentPickups = async () => {
@@ -57,23 +57,86 @@ const LostItemsDashboard = () => {
     }
   };
 
+  const fetchPotentialMatches = async () => {
+  try {
+    const res = await LostFoundService.getPotentialMatchesForLostItem();
+
+    // Extract the matches array
+    const matches = res?.matches || [];
+
+    console.log("✅ Normalized matches", matches);
+
+    setPotentialMatches(matches);
+  } catch (error) {
+    console.error("Error fetching potential matches:", error);
+  }
+};
+
+
+  // 🔹 Fetch correct data based on activeTab
   const fetchData = async () => {
     try {
       setLoading(true);
       const params = searchTerm ? { search: searchTerm } : {};
 
-      if (activeTab === 'lost') {
-        const lostItemsData = await LostFoundService.getLostItems(params);
-        setLostItems(lostItemsData);
-      } else {
-        const foundItemsData = await LostFoundService.getFoundItems(params);
-        // Filter out claimed items from found items
-        const unclaimedFoundItems = foundItemsData.filter(item => item.status !== 'claimed');
-        setFoundItems(unclaimedFoundItems);
+      switch (activeTab) {
+        case "lost":
+        case "lost-items": {
+          const lostItemsData = await LostFoundService.getLostItems({
+            ...params,
+            type: "item",
+          });
+          setLostItems(lostItemsData);
+          break;
+        }
+
+        case "lost-cards": {
+          const lostCardsData = await LostFoundService.getLostItems({
+            ...params,
+            type: "card",
+          });
+          setLostItems(lostCardsData);
+          break;
+        }
+
+        case "found":
+        case "found-items": {
+          const foundItemsData = await LostFoundService.getFoundItems({
+            ...params,
+            type: "item",
+          });
+          const unclaimed = foundItemsData.filter(item => item.status !== "claimed");
+          setFoundItems(unclaimed);
+          break;
+        }
+
+        case "found-cards": {
+          const foundCardsData = await LostFoundService.getFoundItems({
+            ...params,
+            type: "card",
+          });
+          const unclaimed = foundCardsData.filter(item => item.status !== "claimed");
+          setFoundItems(unclaimed);
+          break;
+        }
+
+        case "picked":
+          await fetchRecentPickups();
+          break;
+
+        case "matches":
+          await fetchPotentialMatches();
+          break;
+
+        default:
+          break;
       }
 
-      const statsData = await LostFoundService.getStats();
-      setStats(statsData);
+      // Always fetch stats
+      if (LostFoundService.getStats) {
+        const statsData = await LostFoundService.getStats();
+        setStats(statsData);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -81,58 +144,42 @@ const LostItemsDashboard = () => {
     }
   };
 
-  const fetchPotentialMatches = async () => {
-    try {
-      const allMatches = await LostFoundService.getPotentialMatchesForLostItem();
-      setPotentialMatches(allMatches);
-      console.log("these are matches", allMatches);
-    } catch (error) {
-      console.error('Error fetching potential matches:', error);
-    }
-  };
-
   useEffect(() => {
     fetchData();
-    if (activeTab === 'lost') {
-      fetchPotentialMatches();
-    } else if (activeTab === 'picked') {
-      fetchRecentPickups();
-    }
   }, [activeTab, searchTerm]);
 
   useEffect(() => {
-    if (activeTab === 'lost') {
+    if (activeTab === 'lost' || activeTab === 'lost-items') {
       fetchPotentialMatches();
     }
   }, [activeTab]);
 
-const handleAddLostItem = async () => {
-  await fetchData();
-};
+  const handleAddLostItem = async () => {
+    await fetchData();
+  };
 
-const handleAddFoundItem = async (formData) => {
-  try {
-    const config = {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    };
+  const handleAddFoundItem = async (formData) => {
+    try {
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      };
 
-    const createdItem = await LostFoundService.createFoundItem(formData, config);
-    setFoundItems([...foundItems, createdItem]);
-    setShowAddFoundModal(false);
-    fetchData();
-  } catch (error) {
-    console.error('Error creating found item:', error);
-    // Handle error appropriately
-  }
-};
+      const createdItem = await LostFoundService.createFoundItem(formData, config);
+      setFoundItems([...foundItems, createdItem]);
+      setShowAddFoundModal(false);
+      fetchData();
+    } catch (error) {
+      console.error('Error creating found item:', error);
+    }
+  };
 
   const markAsFound = async (id) => {
     try {
       await LostFoundService.markAsFound(id);
       fetchData();
-      if (activeTab === 'lost') {
+      if (activeTab === 'lost' || activeTab === 'lost-items') {
         fetchPotentialMatches();
       }
     } catch (error) {
@@ -159,6 +206,7 @@ const handleAddFoundItem = async (formData) => {
     }
   };
 
+  // 🔹 Filtering still works as before
   const filteredLostItems = lostItems.filter(item => {
     const search = searchTerm.toLowerCase();
     return (
@@ -171,7 +219,7 @@ const handleAddFoundItem = async (formData) => {
         item.owner_name?.toLowerCase()?.includes(search) ||
         item.reporter_member_id?.toLowerCase()?.includes(search)
       )
-      );
+    );
   });
 
   const filteredFoundItems = foundItems.filter(item => {
@@ -185,8 +233,8 @@ const handleAddFoundItem = async (formData) => {
         )) ||
         item.owner_name?.toLowerCase()?.includes(search) ||
         item.finder_name?.toLowerCase()?.includes(search)
-    
-      )  );
+      )
+    );
   });
 
   return (
@@ -198,17 +246,17 @@ const handleAddFoundItem = async (formData) => {
       />
 
       <LostFoundStats
-  activeTab={activeTab}
-  setActiveTab={setActiveTab}
-  lostItems={{ cards: stats.lost_cards_count || 0, items: stats.lost_items_count || 0 }}
-  foundItems={{ cards: stats.found_cards_count || 0, items: stats.found_items_count || 0 }}
-  pendingItems={stats.pending_count}
-  showMatches={showMatches}
-  setShowMatches={setShowMatches}
-  fetchPotentialMatches={fetchPotentialMatches}
-  onLostSubmit={handleAddLostItem}
-  onFoundSubmit={handleAddFoundItem}
-/>
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        lostItems={{ cards: stats.lost_cards_count || 0, items: stats.lost_items_count || 0 }}
+        foundItems={{ cards: stats.found_cards_count || 0, items: stats.found_items_count || 0 }}
+        pendingItems={stats.pending_count}
+        showMatches={showMatches}
+        setShowMatches={setShowMatches}
+        fetchPotentialMatches={fetchPotentialMatches}
+        onLostSubmit={handleAddLostItem}
+        onFoundSubmit={handleAddFoundItem}
+      />
 
       {loading ? (
         <div className="loading-spinner"></div>
@@ -234,38 +282,34 @@ const handleAddFoundItem = async (formData) => {
       )}
 
       <LostFoundModals
-  showAddLostModal={showAddLostModal}
-  setShowAddLostModal={setShowAddLostModal}
-  showAddFoundModal={showAddFoundModal}
-  setShowAddFoundModal={setShowAddFoundModal}
-  newLostItem={newLostItem}
-  setNewLostItem={setNewLostItem}
-  newFoundItem={newFoundItem}
-  setNewFoundItem={setNewFoundItem}
-
-  // ✅ Pass refreshers properly
-  onLostSubmit={async () => {
-    await fetchData();      // refresh after lost submit
-    setShowAddLostModal(false); // close modal
-  }}
-  onFoundSubmit={async () => {
-    await fetchData();      // refresh after found submit
-    setShowAddFoundModal(false);
-  }}
-
-  showDetailsModal={showDetailsModal}
-  setShowDetailsModal={setShowDetailsModal}
-  selectedItem={selectedItem}
-  pickedBy={pickedBy}
-  setPickedBy={setPickedBy}
-  handlePick={handlePick}
-  showPickupForm={showPickupForm}
-  setShowPickupForm={setShowPickupForm}
-  showMatchesModal={showMatchesModal}
-  setShowMatchesModal={setShowMatchesModal}
-  potentialMatches={potentialMatches}
-/>
-
+        showAddLostModal={showAddLostModal}
+        setShowAddLostModal={setShowAddLostModal}
+        showAddFoundModal={showAddFoundModal}
+        setShowAddFoundModal={setShowAddFoundModal}
+        newLostItem={newLostItem}
+        setNewLostItem={setNewLostItem}
+        newFoundItem={newFoundItem}
+        setNewFoundItem={setNewFoundItem}
+        onLostSubmit={async () => {
+          await fetchData();
+          setShowAddLostModal(false);
+        }}
+        onFoundSubmit={async () => {
+          await fetchData();
+          setShowAddFoundModal(false);
+        }}
+        showDetailsModal={showDetailsModal}
+        setShowDetailsModal={setShowDetailsModal}
+        selectedItem={selectedItem}
+        pickedBy={pickedBy}
+        setPickedBy={setPickedBy}
+        handlePick={handlePick}
+        showPickupForm={showPickupForm}
+        setShowPickupForm={setShowPickupForm}
+        showMatchesModal={showMatchesModal}
+        setShowMatchesModal={setShowMatchesModal}
+        potentialMatches={potentialMatches}
+      />
     </div>
   );
 };

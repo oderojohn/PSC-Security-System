@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'; 
 import '../../assets/css/LostFoundModals.css'; 
 
 const LostFoundModals = ({
@@ -10,7 +10,6 @@ const LostFoundModals = ({
   handlePick,
   showPickupForm,
   setShowPickupForm,
-  
 }) => {
   return (
     <>
@@ -108,11 +107,15 @@ const LostFoundModals = ({
                 </div>
               </div>
 
+              {/* Pickup Section */}
               {!showPickupForm ? (
                 <button 
                   className="lf-btn lf-btn-primary lf-pickup-btn"
                   onClick={() => setShowPickupForm(true)}
-                  disabled={selectedItem.status !== 'found'}
+                  disabled={
+                    selectedItem.status &&
+                    selectedItem.status.toLowerCase() !== 'pending'
+                  }
                 >
                   Initiate Pickup Process
                 </button>
@@ -180,8 +183,6 @@ const LostFoundModals = ({
           </div>
         </div>
       )}
-
-      
     </>
   );
 };
