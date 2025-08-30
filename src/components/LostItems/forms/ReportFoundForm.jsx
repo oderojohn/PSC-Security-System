@@ -20,6 +20,7 @@ export const ReportFoundForm = ({ onClose, onSubmit }) => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
+  const [photoError, setPhotoError] = useState(null);
 
   useEffect(() => {
     return () => {
@@ -63,21 +64,50 @@ export const ReportFoundForm = ({ onClose, onSubmit }) => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setPhotoError('Please select a valid image file');
+        return;
+      }
+
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        setPhotoError('File size must be less than 5MB');
+        return;
+      }
+
+      setPhotoError(null);
       setPhotoPreview(URL.createObjectURL(file));
       setFormData({ ...formData, photo: file });
+      setErrors({ ...errors, photo: null });
     }
   };
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'environment', // Use back camera on mobile
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
       setCameraActive(true);
+      setPhotoError(null);
     } catch (err) {
       console.error("Error accessing camera:", err);
-      setErrors({ ...errors, photo: 'Could not access camera' });
+      let errorMessage = 'Could not access camera';
+      if (err.name === 'NotAllowedError') {
+        errorMessage = 'Camera access denied. Please allow camera permissions.';
+      } else if (err.name === 'NotFoundError') {
+        errorMessage = 'No camera found on this device.';
+      } else if (err.name === 'NotReadableError') {
+        errorMessage = 'Camera is already in use by another application.';
+      }
+      setPhotoError(errorMessage);
     }
   };
 
@@ -433,10 +463,10 @@ export const ReportFoundForm = ({ onClose, onSubmit }) => {
                     />
                   </>
                 )}
-                {errors.photo && (
+                {(errors.photo || photoError) && (
                   <div className="lf-error-feedback">
                     <FiAlertCircle className="lf-error-icon" />
-                    {errors.photo}
+                    {errors.photo || photoError}
                   </div>
                 )}
               </div>

@@ -107,77 +107,79 @@ const LostFoundModals = ({
                 </div>
               </div>
 
-              {/* Pickup Section */}
-              {!showPickupForm ? (
-                <button 
-                  className="lf-btn lf-btn-primary lf-pickup-btn"
-                  onClick={() => setShowPickupForm(true)}
-                  disabled={
-                    selectedItem.status &&
-                    selectedItem.status.toLowerCase() !== 'pending'
-                  }
-                >
-                  Initiate Pickup Process
-                </button>
-              ) : (
-                <div className="lf-pickup-form">
-                  <div className="lf-scan-notice">
-                    <p>Members can pick up items by scanning their Membership Card at the scanner.</p>
-                  </div>
-                  
-                  <h4>Manual Pick Up Form</h4>
-                  
-                  <div className="lf-form-group">
-                    <label>Member No/ID No</label>
-                    <input
-                      className="lf-form-control"
-                      type="text"
-                      placeholder="Member identification number"
-                      value={pickedBy.memberId}
-                      onChange={(e) => setPickedBy({ ...pickedBy, memberId: e.target.value })}
-                    />
-                  </div>
+              {/* Pickup Section - Only show for found items and found cards */}
+              {(selectedItem.place_found || (selectedItem.type === 'card' && selectedItem.status === 'found')) && (
+                !showPickupForm ? (
+                  <button
+                    className="lf-btn lf-btn-primary lf-pickup-btn"
+                    onClick={() => setShowPickupForm(true)}
+                    disabled={
+                      selectedItem.status &&
+                      selectedItem.status.toLowerCase() !== 'found'
+                    }
+                  >
+                    Initiate Pickup Process
+                  </button>
+                ) : (
+                  <div className="lf-pickup-form">
+                    <div className="lf-scan-notice">
+                      <p>Members can pick up items by scanning their Membership Card at the scanner.</p>
+                    </div>
 
-                  <div className="lf-form-group">
-                    <label>Full Name</label>
-                    <input
-                      className="lf-form-control"
-                      type="text"
-                      placeholder="Member's full name"
-                      value={pickedBy.name}
-                      onChange={(e) => setPickedBy({ ...pickedBy, name: e.target.value })}
-                    />
-                  </div>
+                    <h4>Manual Pick Up Form</h4>
 
-                  <div className="lf-form-group">
-                    <label>Phone Number</label>
-                    <input
-                      className="lf-form-control"
-                      type="tel"
-                      placeholder="Member's phone number"
-                      value={pickedBy.phone}
-                      onChange={(e) => setPickedBy({ ...pickedBy, phone: e.target.value })}
-                    />
-                  </div>
+                    <div className="lf-form-group">
+                      <label>Member No/ID No</label>
+                      <input
+                        className="lf-form-control"
+                        type="text"
+                        placeholder="Member identification number"
+                        value={pickedBy.memberId}
+                        onChange={(e) => setPickedBy({ ...pickedBy, memberId: e.target.value })}
+                      />
+                    </div>
 
-                  <div className="lf-modal-footer">
-                    <button 
-                      className="lf-btn lf-btn-secondary"
-                      onClick={() => {
-                        setShowPickupForm(false);
-                        setPickedBy({ memberId: '', name: '', phone: '' });
-                      }}
-                    >
-                      Cancel
-                    </button>
-                    <button 
-                      className="lf-btn lf-btn-primary"
-                      onClick={handlePick}
-                    >
-                      Confirm Pickup
-                    </button>
+                    <div className="lf-form-group">
+                      <label>Full Name</label>
+                      <input
+                        className="lf-form-control"
+                        type="text"
+                        placeholder="Member's full name"
+                        value={pickedBy.name}
+                        onChange={(e) => setPickedBy({ ...pickedBy, name: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="lf-form-group">
+                      <label>Phone Number</label>
+                      <input
+                        className="lf-form-control"
+                        type="tel"
+                        placeholder="Member's phone number"
+                        value={pickedBy.phone}
+                        onChange={(e) => setPickedBy({ ...pickedBy, phone: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="lf-modal-footer">
+                      <button
+                        className="lf-btn lf-btn-secondary"
+                        onClick={() => {
+                          setShowPickupForm(false);
+                          setPickedBy({ memberId: '', name: '', phone: '' });
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="lf-btn lf-btn-primary"
+                        onClick={handlePick}
+                      >
+                        Confirm Pickup
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )
               )}
             </div>
           </div>

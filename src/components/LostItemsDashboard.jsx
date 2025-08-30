@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import LostFoundHeader from './LostItems/LostFoundHeader';
 import LostFoundStats from './LostItems/LostFoundStats';
 import LostFoundTable from './LostItems/tables/LostFoundTable';
@@ -20,6 +20,7 @@ const LostItemsDashboard = () => {
   const [pickedBy, setPickedBy] = useState({ memberId: '', name: '', phone: '' });
   const [showPickupForm, setShowPickupForm] = useState(false);
   const [showMatches, setShowMatches] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const [newLostItem, setNewLostItem] = useState({
     type: 'card',
@@ -44,7 +45,7 @@ const LostItemsDashboard = () => {
   });
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('lost-items');
+  const [activeTab, setActiveTab] = useState('found-items');
   const [loading, setLoading] = useState(true);
 
   const fetchRecentPickups = async () => {
@@ -74,7 +75,7 @@ const LostItemsDashboard = () => {
 
 
   // 🔹 Fetch correct data based on activeTab
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const params = searchTerm ? { search: searchTerm } : {};
@@ -132,21 +133,32 @@ const LostItemsDashboard = () => {
           break;
       }
 
-      // Always fetch stats
+      // Always fetch enhanced stats
       if (LostFoundService.getStats) {
         const statsData = await LostFoundService.getStats();
-        setStats(statsData);
+        setStats({
+          lost_count: statsData.lost?.total || 0,
+          found_count: statsData.found?.total || 0,
+          pending_count: statsData.lost?.pending || 0,
+          lost_cards_count: statsData.lost?.cards || 0,
+          lost_items_count: statsData.lost?.items || 0,
+          found_cards_count: statsData.found?.cards || 0,
+          found_items_count: statsData.found?.items || 0,
+          claimed_count: statsData.found?.claimed || 0,
+          unclaimed_count: statsData.found?.unclaimed || 0,
+          weekly_trends: statsData.weekly_trends || {}
+        });
       }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, searchTerm]);
 
   useEffect(() => {
     fetchData();
-  }, [activeTab, searchTerm]);
+  }, [fetchData]);
 
   useEffect(() => {
     if (activeTab === 'lost' || activeTab === 'lost-items') {
@@ -189,7 +201,15 @@ const LostItemsDashboard = () => {
 
   const markAsPicked = async (id) => {
     try {
-      await LostFoundService.pickFoundItem(id, pickedBy);
+      // Use the correct API endpoint for creating pickup logs
+      const pickupData = {
+        item: id,
+        picked_by_member_id: pickedBy.memberId,
+        picked_by_name: pickedBy.name,
+        picked_by_phone: pickedBy.phone
+      };
+
+      await LostFoundService.createPickupLog(pickupData);
       setShowDetailsModal(false);
       setPickedBy({ memberId: '', name: '', phone: '' });
       setSelectedItem(null);
@@ -253,6 +273,8 @@ const LostItemsDashboard = () => {
         pendingItems={stats.pending_count}
         showMatches={showMatches}
         setShowMatches={setShowMatches}
+        showSettings={showSettings}
+        setShowSettings={setShowSettings}
         fetchPotentialMatches={fetchPotentialMatches}
         onLostSubmit={handleAddLostItem}
         onFoundSubmit={handleAddFoundItem}

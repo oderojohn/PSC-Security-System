@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import LostCardsTable from './LostCardsTable';
 import LostItemsTable from './LostItemsTable';
 import FoundCardsTable from './FoundCardsTable';

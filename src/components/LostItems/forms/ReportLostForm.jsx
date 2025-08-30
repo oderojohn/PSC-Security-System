@@ -40,6 +40,7 @@ export const ReportLostForm = ({ onClose, onSubmit }) => {
     return Object.keys(newErrors).length === 0;
   };
 
+
  const handleSubmit = async (e) => {
   e.preventDefault();
   if (!validateForm()) return;
@@ -47,6 +48,7 @@ export const ReportLostForm = ({ onClose, onSubmit }) => {
   setIsSubmitting(true);
   try {
     let payload = {};
+
     if (formData.type === 'card') {
       payload = {
         type: 'card',
@@ -172,14 +174,15 @@ export const ReportLostForm = ({ onClose, onSubmit }) => {
                   {errors.description && <div className="lf-error-feedback"><FiAlertCircle className="lf-error-icon" />{errors.description}</div>}
                 </div>
 
+
                 <div className="lf-form-group">
                   <label>Owner Name</label>
-                  <input 
-                    className="lf-form-control" 
-                    type="text" 
-                    placeholder="If known" 
-                    value={formData.owner_name} 
-                    onChange={(e) => setFormData({ ...formData, owner_name: e.target.value })} 
+                  <input
+                    className="lf-form-control"
+                    type="text"
+                    placeholder="If known"
+                    value={formData.owner_name}
+                    onChange={(e) => setFormData({ ...formData, owner_name: e.target.value })}
                   />
                 </div>
 

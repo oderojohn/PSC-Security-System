@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
-import { FiEye, FiCheck, FiX } from 'react-icons/fi';
+import { FiEye, FiCheck, FiX, FiPrinter, FiMail } from 'react-icons/fi';
+import { LostFoundService } from '../../../service/api/api';
 import "../ok.css";
 
 const ItemsTable = ({ items, columns, onViewDetails, isLost, isFound, onMarkAsPicked, showType = 'all' }) => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailData, setEmailData] = useState({ subject: '', message: '' });
+  const [selectedItemForEmail, setSelectedItemForEmail] = useState(null);
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [selectedItemForPrint, setSelectedItemForPrint] = useState(null);
 
   const safeText = (val, fallback = 'N/A') => {
     if (val === null || val === undefined) return fallback;
@@ -59,6 +65,66 @@ const ItemsTable = ({ items, columns, onViewDetails, isLost, isFound, onMarkAsPi
     setShowImageModal(true);
   };
 
+  // Function to handle print receipt
+  const handlePrintReceipt = (item, e) => {
+    e.stopPropagation();
+    setSelectedItemForPrint(item);
+    setShowPrintModal(true);
+  };
+
+  // Function to confirm and print receipt
+  const confirmPrintReceipt = async () => {
+    try {
+      if (isLost) {
+        await LostFoundService.printLostReceipt(selectedItemForPrint.id);
+      } else {
+        await LostFoundService.printFoundReceipt(selectedItemForPrint.id);
+      }
+      alert('Receipt printed successfully!');
+      setShowPrintModal(false);
+      setSelectedItemForPrint(null);
+    } catch (error) {
+      console.error('Error printing receipt:', error);
+      alert('Failed to print receipt. Please try again.');
+    }
+  };
+
+  // Function to handle send email
+  const handleSendEmail = (item, e) => {
+    e.stopPropagation();
+    setSelectedItemForEmail(item);
+    setEmailData({
+      subject: `Lost Item Update - ${item.item_name || item.card_last_four}`,
+      message: `Dear ${item.owner_name || 'Valued Customer'},
+
+We have an update regarding your ${item.type === 'card' ? 'card' : 'item'} ${item.item_name || item.card_last_four}.
+
+Please contact the reception for more details.
+
+Best regards,
+Parklands Sports Club Reception`
+    });
+    setShowEmailModal(true);
+  };
+
+  // Function to send email
+  const sendEmail = async () => {
+    try {
+      if (isLost) {
+        await LostFoundService.sendLostEmail(selectedItemForEmail.id, emailData);
+      } else {
+        await LostFoundService.sendFoundEmail(selectedItemForEmail.id, emailData);
+      }
+      alert('Email sent successfully!');
+      setShowEmailModal(false);
+      setSelectedItemForEmail(null);
+    } catch (error) {
+      console.error('Error sending email:', error);
+      alert('Failed to send email. Please try again.');
+    }
+  };
+
+
   return (
     <div>
       <div className="table-container" style={{ maxHeight: '500px', overflowY: 'auto' }}>
@@ -85,6 +151,8 @@ const ItemsTable = ({ items, columns, onViewDetails, isLost, isFound, onMarkAsPi
                   showType={showType}
                   onRowClick={setSelectedItem}
                   onViewImage={openImageModal}
+                  onPrintReceipt={handlePrintReceipt}
+                  onSendEmail={handleSendEmail}
                 />
               ))
             ) : (
@@ -160,12 +228,127 @@ const ItemsTable = ({ items, columns, onViewDetails, isLost, isFound, onMarkAsPi
             </button>
             <h2>Item Photo</h2>
             <div className="modal-body">
-              <img 
-                src={selectedImage} 
-                alt="Item" 
+              <img
+                src={selectedImage}
+                alt="Item"
                 className="enlarged-photo"
                 style={{ maxWidth: '100%', maxHeight: '80vh' }}
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Email Modal */}
+      {showEmailModal && selectedItemForEmail && (
+        <div className="modal-overlay" onClick={() => setShowEmailModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowEmailModal(false)}>
+              <FiX />
+            </button>
+            <h2>Send Email</h2>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>To:</label>
+                <input
+                  type="email"
+                  className="form-control"
+                  value={selectedItemForEmail.reporter_email || selectedItemForEmail.finder_email || ''}
+                  readOnly
+                />
+              </div>
+              <div className="form-group">
+                <label>Subject:</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={emailData.subject}
+                  onChange={(e) => setEmailData({ ...emailData, subject: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>Message:</label>
+                <textarea
+                  className="form-control"
+                  rows="6"
+                  value={emailData.message}
+                  onChange={(e) => setEmailData({ ...emailData, message: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowEmailModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={sendEmail}
+              >
+                Send Email
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Print Receipt Modal */}
+      {showPrintModal && selectedItemForPrint && (
+        <div className="modal-overlay" onClick={() => setShowPrintModal(false)}>
+          <div className="modal-content receipt-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowPrintModal(false)}>
+              <FiX />
+            </button>
+            <h2>Print Receipt Preview</h2>
+            <div className="modal-body">
+              <div className="receipt-preview">
+                <div className="receipt-header">
+                  <h3>Parklands Sports Club</h3>
+                  <p>Lost & Found Receipt</p>
+                </div>
+                <div className="receipt-details">
+                  <div className="receipt-row">
+                    <span className="label">Type:</span>
+                    <span className="value">{selectedItemForPrint.type === 'card' ? '💳 Card' : '🧳 Item'}</span>
+                  </div>
+                  <div className="receipt-row">
+                    <span className="label">Item:</span>
+                    <span className="value">{selectedItemForPrint.item_name || selectedItemForPrint.card_last_four}</span>
+                  </div>
+                  <div className="receipt-row">
+                    <span className="label">Owner:</span>
+                    <span className="value">{selectedItemForPrint.owner_name || 'Unknown'}</span>
+                  </div>
+                  <div className="receipt-row">
+                    <span className="label">Date:</span>
+                    <span className="value">{new Date(selectedItemForPrint.date_reported).toLocaleDateString()}</span>
+                  </div>
+                  <div className="receipt-row">
+                    <span className="label">Status:</span>
+                    <span className="value">{selectedItemForPrint.status}</span>
+                  </div>
+                </div>
+                <div className="receipt-footer">
+                  <p>Please keep this receipt for your records.</p>
+                  <p>Contact reception if you have any questions.</p>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowPrintModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={confirmPrintReceipt}
+              >
+                <FiPrinter /> Print Receipt
+              </button>
             </div>
           </div>
         </div>
@@ -174,7 +357,7 @@ const ItemsTable = ({ items, columns, onViewDetails, isLost, isFound, onMarkAsPi
   );
 };
 
-const TableRow = ({ item, isFound, onViewDetails, onMarkAsPicked, safeText, showType, onViewImage }) => {
+const TableRow = ({ item, isFound, onViewDetails, onMarkAsPicked, safeText, showType, onViewImage, onPrintReceipt, onSendEmail }) => {
   return (
     <tr
       onClick={() => onViewDetails(item)}
@@ -201,17 +384,18 @@ const TableRow = ({ item, isFound, onViewDetails, onMarkAsPicked, safeText, show
           <td>{safeText(item.place_lost || item.place_found, 'Unknown')}</td>
           <td>{safeText(item.reporter_phone || item.finder_phone, 'No phone')}</td>
 
-          {/* ✅ Updated: Show button to view image in modal */}
+          {/* ✅ Updated: Show photo thumbnail */}
           <td>
             {item.photo ? (
-              <button
-                className="btn btn-sm btn-outline-primary"
+              <img
+                src={item.photo}
+                alt="Item"
+                className="photo-thumbnail"
                 onClick={(e) => onViewImage(item.photo, e)}
-              >
-                View Photo
-              </button>
+                style={{ cursor: 'pointer', width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }}
+              />
             ) : (
-              "No photo"
+              <span className="no-photo">No photo</span>
             )}
           </td>
 
@@ -225,27 +409,37 @@ const TableRow = ({ item, isFound, onViewDetails, onMarkAsPicked, safeText, show
       )}
 
       <td>
-        <button
-          className="btn btn-sm btn-info"
-          onClick={(e) => {
-            e.stopPropagation();
-            onViewDetails(item);
-          }}
-        >
-          <FiEye /> View
-        </button>
-
-        {isFound && item.status === 'found' && (
+        <div className="action-buttons">
           <button
-            className="btn btn-sm btn-success"
+            className="btn btn-sm btn-info"
             onClick={(e) => {
               e.stopPropagation();
-              onMarkAsPicked(item.id);
+              onViewDetails(item);
             }}
+            title="View Details"
           >
-            <FiCheck /> Picked
+            <FiEye />
           </button>
-        )}
+
+          <button
+            className="btn btn-sm btn-secondary"
+            onClick={(e) => onPrintReceipt(item, e)}
+            title="Print Receipt"
+          >
+            <FiPrinter />
+          </button>
+
+          {(item.reporter_email || item.finder_email) && (
+            <button
+              className="btn btn-sm btn-warning"
+              onClick={(e) => onSendEmail(item, e)}
+              title="Send Email"
+            >
+              <FiMail />
+            </button>
+          )}
+
+        </div>
       </td>
     </tr>
   );

@@ -216,9 +216,25 @@ export const LostFoundService = {
   },
 
   createFoundItem: async (data) => {
-    const response = await api.post('/items/found/', data);
-    return response.data;
-  },
+  let payload = data;
+
+  // If data is plain object with photo, convert to FormData
+  if (!(data instanceof FormData)) {
+    const formPayload = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        formPayload.append(key, value);
+      }
+    });
+    payload = formPayload;
+  }
+
+  const response = await api.post("/items/found/", payload, {
+    headers: { "Content-Type": "multipart/form-data" }
+  });
+  return response.data;
+},
+
 
   pickFoundItem: async (id, pickerData) => {
     const response = await api.post(`/items/found/${id}/pick/`, pickerData);
@@ -243,6 +259,148 @@ export const LostFoundService = {
       console.error('Error fetching recent pickups:', error);
       throw error;
     }
+  },
+
+  // 🔹 Print Receipt
+  printLostReceipt: async (id) => {
+    const response = await api.post(`/items/lost/${id}/print_receipt/`);
+    return response.data;
+  },
+
+  printFoundReceipt: async (id) => {
+    const response = await api.post(`/items/found/${id}/print_receipt/`);
+    return response.data;
+  },
+
+  // 🔹 Send Email
+  sendLostEmail: async (id, emailData) => {
+    const response = await api.post(`/items/lost/${id}/send_email/`, emailData);
+    return response.data;
+  },
+
+  sendFoundEmail: async (id, emailData) => {
+    const response = await api.post(`/items/found/${id}/send_email/`, emailData);
+    return response.data;
+  },
+
+  // 🔹 Bulk Email
+  sendBulkEmail: async (emailData) => {
+    const response = await api.post('/items/lost/send_bulk_email/', emailData);
+    return response.data;
+  },
+
+  // 🔹 Export
+  exportLostItemsCSV: async (params = {}) => {
+    const response = await api.get('/items/lost/export_csv/', {
+      params,
+      responseType: 'blob'
+    });
+    return response.data;
+  },
+
+  exportLostItemsPDF: async (params = {}) => {
+    const response = await api.get('/items/lost/export_pdf/', {
+      params,
+      responseType: 'blob'
+    });
+    return response.data;
+  },
+
+  exportFoundItemsCSV: async (params = {}) => {
+    const response = await api.get('/items/found/export_csv/', {
+      params,
+      responseType: 'blob'
+    });
+    return response.data;
+  },
+
+  exportFoundItemsPDF: async (params = {}) => {
+    const response = await api.get('/items/found/export_pdf/', {
+      params,
+      responseType: 'blob'
+    });
+    return response.data;
+  },
+
+  // 🔹 System Settings
+  getSettings: async (params = {}) => {
+    const response = await api.get('/items/settings/', { params });
+    return response.data;
+  },
+
+  createSetting: async (data) => {
+    const response = await api.post('/items/settings/', data);
+    return response.data;
+  },
+
+  updateSetting: async (id, data) => {
+    const response = await api.put(`/items/settings/${id}/`, data);
+    return response.data;
+  },
+
+  deleteSetting: async (id) => {
+    const response = await api.delete(`/items/settings/${id}/`);
+    return response.data;
+  },
+
+  getSetting: async (key) => {
+    const response = await api.get('/items/settings/get_setting/', {
+      params: { key }
+    });
+    return response.data;
+  },
+
+  setSetting: async (data) => {
+    const response = await api.post('/items/settings/set_setting/', data);
+    return response.data;
+  },
+
+  // 🔹 Enhanced Stats
+  getStats: async (params = {}) => {
+    const response = await api.get('/items/stats/', { params });
+    return response.data;
+  },
+
+  // 🔹 Weekly Report
+  getWeeklyReport: async (weeks = 4) => {
+    const response = await api.get('/items/pickuplogs/weekly_report/', {
+      params: { weeks }
+    });
+    return response.data;
+  },
+
+  // 🔹 Pickup Logs
+  getPickupLogs: async (params = {}) => {
+    const response = await api.get('/items/pickuplogs/', { params });
+    return response.data;
+  },
+
+  createPickupLog: async (data) => {
+    const response = await api.post('/items/pickuplogs/', data);
+    return response.data;
+  },
+
+  updatePickupLog: async (id, data) => {
+    const response = await api.put(`/items/pickuplogs/${id}/`, data);
+    return response.data;
+  },
+
+  deletePickupLog: async (id) => {
+    const response = await api.delete(`/items/pickuplogs/${id}/`);
+    return response.data;
+  },
+
+  getPickupHistory: async (params = {}) => {
+    const response = await api.get('/items/pickuplogs/pickuphistory/', { params });
+    return response.data;
+  },
+
+  // 🔹 Print Match Receipt
+  printMatchReceipt: async (trackingId) => {
+    const response = await api.post('/items/found/print_match/', {
+      tracking_id: trackingId
+    });
+    return response.data;
   }
 };
 
