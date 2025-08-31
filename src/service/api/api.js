@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:8000/api/`;
-// const API_BASE_URL = `https://localhost:8000/api/`;
+// const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:8000/api/`;
+const API_BASE_URL = `http://127.0.0.1:8000/api/`;
 
 
 // Axios instance
@@ -57,11 +57,13 @@ api.interceptors.response.use(
 
 // PackageService
 export const PackageService = {
+  // Get packages with filtering
   getPackages: async (params = {}) => {
-    const response = await api.get('/packages/', { params: { ...params, status: 'pending' } });
+    const response = await api.get('/packages/', { params });
     return response.data;
   },
 
+  // Get picked packages (filtered by status and time_range)
   getPickedPackages: async (params = {}) => {
     const response = await api.get('/packages/', {
       params: {
@@ -72,43 +74,75 @@ export const PackageService = {
     });
     return response.data;
   },
-  
 
+  // Create new package
   createPackage: async (data) => {
     const response = await api.post('/packages/', data);
     return response.data;
   },
 
-  updatePackage: async (id, data) => {
-    const response = await api.put(`/packages/${id}/`, data);
+  // Get single package
+  getPackage: async (id) => {
+    const response = await api.get(`/packages/${id}/`);
     return response.data;
   },
 
+  // Update package
+  updatePackage: async (id, data) => {
+    console.log('PackageService.updatePackage called with:', id, data);
+    try {
+      const response = await api.patch(`/packages/${id}/`, data);
+      console.log('PackageService.updatePackage response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('PackageService.updatePackage error:', error);
+      throw error;
+    }
+  },
+
+  // Partial update package
   partialUpdatePackage: async (id, data) => {
     const response = await api.patch(`/packages/${id}/`, data);
     return response.data;
   },
 
+  // Delete package
   deletePackage: async (id) => {
     const response = await api.delete(`/packages/${id}/`);
     return response.data;
   },
 
+  // Pick package
   pickPackage: async (id, pickerData) => {
     const response = await api.post(`/packages/${id}/pick/`, pickerData);
     return response.data;
   },
 
+  // Reprint package receipt
+  reprintPackage: async (id) => {
+    const response = await api.post(`/packages/${id}/reprint/`);
+    return response.data;
+  },
+
+  // Get package history
+  getPackageHistory: async (id) => {
+    const response = await api.get(`/packages/${id}/history/`);
+    return response.data;
+  },
+
+  // Get package statistics
   getStats: async (params = {}) => {
     const response = await api.get('/packages/stats/', { params });
     return response.data;
   },
 
+  // Search packages
   searchPackages: async (params = {}) => {
     const response = await api.get('/packages/', { params });
     return response.data;
   },
 
+  // Export packages as CSV
   exportPackages: async (params = {}) => {
     const response = await api.get('/packages/export/', {
       params,
@@ -117,8 +151,49 @@ export const PackageService = {
     return response.data;
   },
 
+  // Get package summary
   getSummary: async (params = {}) => {
     const response = await api.get('/packages/summary/', { params });
+    return response.data;
+  },
+
+  // Settings management
+  getSettings: async () => {
+    console.log('PackageService.getSettings called');
+    try {
+      const response = await api.get('/settings/');
+      console.log('PackageService.getSettings response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('PackageService.getSettings error:', error);
+      throw error;
+    }
+  },
+
+  createSettings: async (data) => {
+    const response = await api.post('/settings/', data);
+    return response.data;
+  },
+
+  updateSettings: async (data) => {
+    console.log('PackageService.updateSettings called with:', data);
+    try {
+      const response = await api.put('/settings/', data);
+      console.log('PackageService.updateSettings response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('PackageService.updateSettings error:', error);
+      throw error;
+    }
+  },
+
+  partialUpdateSettings: async (data) => {
+    const response = await api.patch('/settings/', data);
+    return response.data;
+  },
+
+  deleteSettings: async () => {
+    const response = await api.delete('/settings/');
     return response.data;
   },
 };

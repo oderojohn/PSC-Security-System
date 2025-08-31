@@ -9,7 +9,8 @@ const PackageStats = ({
   setShowDropModal,
   setShowPickModal,
   searchTerm,
-  setSearchTerm
+  setSearchTerm,
+  setShowSettings
 }) => {
   return (
     <div className="dashboard-toolbar">
@@ -19,13 +20,14 @@ const PackageStats = ({
           onClick={() => setActiveTab('drop')}
         >
           <span>Dropped </span>
-          {/* <strong>{droppedCount}</strong> */}
+          <strong>{droppedCount || 0}</strong>
         </div>
         <div
           className={`stat ${activeTab === 'pick' ? 'active' : ''}`}
           onClick={() => setActiveTab('pick')}
         >
           <span>Picked </span>
+          <strong>{pickedCount || 0}</strong>
         </div>
       </div>
 
@@ -60,6 +62,12 @@ const PackageStats = ({
             onClick={() => setShowDropModal(true)}
           >
             <FiPlus size={16} /> Drop Package
+          </button>
+          <button
+            className="add-button secondary"
+            onClick={() => setShowSettings(true)}
+          >
+            ⚙️ Settings
           </button>
         </div>
       </div>

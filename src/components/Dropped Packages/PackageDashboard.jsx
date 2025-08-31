@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import PackageStats from './PackageStats';
 import PackageTable from './PackageTable';
 import PackageModals from './PackageModals';
+import PackageSettings from './PackageSettings';
 import { PackageService } from '../../service/api/api';
-import '../../assets/css/errors.css'; 
+import '../../assets/css/errors.css';
 
 const PackageDashboard = () => {
-  const [packages, setPackages] = useState([]);
   const [droppedPackages, setDroppedPackages] = useState([]);
   const [pickedPackages, setPickedPackages] = useState([]);
   const [stats, setStats] = useState({ pending: 0, picked: 0, total: 0 });
@@ -17,6 +17,7 @@ const PackageDashboard = () => {
   const [showDropModal, setShowDropModal] = useState(false);
   const [showPickModal, setShowPickModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [pickedBy, setPickedBy] = useState({ memberId: '', name: '', phone: '' });
   const [searchTerm, setSearchTerm] = useState('');
@@ -46,18 +47,20 @@ const PackageDashboard = () => {
     try {
       setLoading(true);
       setError(null);
-      
-      const [pendingpackages, statsData,pickedPackages] = await Promise.all([
+
+      const [allPackages, statsData] = await Promise.all([
         PackageService.getPackages(),
-        PackageService.getStats(),
-        PackageService.getPickedPackages()
+        PackageService.getStats()
       ]);
 
-      // setpendingpackages(allPackages);
-      setDroppedPackages(pendingpackages);
+      // Filter packages by status
+      const pendingPackages = allPackages.filter(pkg => pkg.status === 'pending');
+      const pickedPackages = allPackages.filter(pkg => pkg.status === 'picked');
+
+      setDroppedPackages(pendingPackages);
       setPickedPackages(pickedPackages);
       setStats(statsData);
-      console.log("console print",pickedPackages)
+      console.log("Fetched packages:", { pending: pendingPackages.length, picked: pickedPackages.length });
 
     } catch (err) {
       setError(err.message || 'Failed to fetch packages');
@@ -93,7 +96,7 @@ const PackageDashboard = () => {
   const handleDropPackage = async () => {
     try {
       setError(null);
-      
+
       const packageData = {
         type: newDroppedPackage.type,
         description: newDroppedPackage.description,
@@ -105,7 +108,7 @@ const PackageDashboard = () => {
 
       const createdPackage = await PackageService.createPackage(packageData);
 
-      setPackages([...packages, createdPackage]);
+      // Update local state
       setDroppedPackages([...droppedPackages, createdPackage]);
       setStats({
         ...stats,
@@ -122,7 +125,7 @@ const PackageDashboard = () => {
         droppedBy: '',
         dropperPhone: ''
       });
-      
+
       setSuccess('Package dropped successfully!');
     } catch (err) {
       setError(err.message || 'Error creating package');
@@ -134,7 +137,7 @@ const PackageDashboard = () => {
 
     try {
       setError(null);
-      
+
       const pickerData = {
         picked_by: pickedBy.name,
         picker_phone: pickedBy.phone,
@@ -144,20 +147,21 @@ const PackageDashboard = () => {
       setShowDetailsModal(false);
       setPickedBy({ memberId: '', name: '', phone: '' });
       setSelectedPackage(null);
-      
+
       setSuccess('Package picked successfully!');
       await fetchData(); // Refresh all data after picking
     } catch (err) {
       setError(err.message || 'Error picking package');
     }
   };
+
   if (loading) {
     return (
       <div className="lost-items-dashboard">
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
-        <p>Loading packages...</p>
-      </div>
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Loading packages...</p>
+        </div>
       </div>
     );
   }
@@ -176,7 +180,7 @@ const PackageDashboard = () => {
           </button>
         </div>
       )}
-      
+
       {success && (
         <div className="notification success">
           <div className="notification-content">
@@ -189,55 +193,55 @@ const PackageDashboard = () => {
         </div>
       )}
 
-      {/* <PackageHeader 
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
+      <PackageStats
         activeTab={activeTab}
-      /> */}
-      
-      <PackageStats 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        droppedCount={stats.pending} 
-        pickedCount={stats.picked}
+        setActiveTab={setActiveTab}
+        droppedCount={stats.pending || droppedPackages.length}
+        pickedCount={stats.picked || pickedPackages.length}
         setSearchTerm={setSearchTerm}
         searchTerm={searchTerm}
-        setShowDropModal={setShowDropModal} 
-        setShowPickModal={setShowPickModal} 
+        setShowDropModal={setShowDropModal}
+        setShowPickModal={setShowPickModal}
+        setShowSettings={setShowSettings}
       />
-      
-      <PackageTable 
-        activeTab={activeTab} 
-        filteredDroppedPackages={filteredDroppedPackages} 
-        filteredPickedPackages={filteredPickedPackages} 
-        searchTerm={searchTerm} 
-        setSearchTerm={setSearchTerm} 
+
+      <PackageTable
+        activeTab={activeTab}
+        filteredDroppedPackages={filteredDroppedPackages}
+        filteredPickedPackages={filteredPickedPackages}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
         onViewDetails={(pkg) => {
           setSelectedPackage(pkg);
           setShowDetailsModal(true);
         }}
-        refreshData={fetchData} 
+        refreshData={fetchData}
       />
-      
-    <PackageModals 
-  showDropModal={showDropModal}
-  setShowDropModal={setShowDropModal}
-  showPickModal={showPickModal}
-  setShowPickModal={setShowPickModal}
-  newDroppedPackage={newDroppedPackage}
-  setNewDroppedPackage={setNewDroppedPackage}
-  handleDropPackage={handleDropPackage}
-  showDetailsModal={showDetailsModal}
-  setShowDetailsModal={setShowDetailsModal}
-  selectedPackage={selectedPackage}
-  pickedBy={pickedBy}
-  setPickedBy={setPickedBy}
-  handlePick={handlePick}
-  error={error}
-  setError={setError}
-  setSuccess={setSuccess} 
-/>
 
+      <PackageModals
+        showDropModal={showDropModal}
+        setShowDropModal={setShowDropModal}
+        showPickModal={showPickModal}
+        setShowPickModal={setShowPickModal}
+        newDroppedPackage={newDroppedPackage}
+        setNewDroppedPackage={setNewDroppedPackage}
+        handleDropPackage={handleDropPackage}
+        showDetailsModal={showDetailsModal}
+        setShowDetailsModal={setShowDetailsModal}
+        selectedPackage={selectedPackage}
+        setSelectedPackage={setSelectedPackage}
+        pickedBy={pickedBy}
+        setPickedBy={setPickedBy}
+        handlePick={handlePick}
+        error={error}
+        setError={setError}
+        setSuccess={setSuccess}
+        refreshData={fetchData}
+      />
+
+      {showSettings && (
+        <PackageSettings onClose={() => setShowSettings(false)} />
+      )}
     </div>
   );
 };

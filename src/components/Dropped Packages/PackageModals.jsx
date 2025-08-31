@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { PackageService } from '../../service/api/api';
 import "../../assets/css/modals.css";
 
 const PackageModals = ({
@@ -12,16 +13,22 @@ const PackageModals = ({
   showDetailsModal,
   setShowDetailsModal,
   selectedPackage,
+  setSelectedPackage,
   pickedBy,
   setPickedBy,
   handlePick,
   setError,
-  setSuccess
+  setSuccess,
+  refreshData
 }) => {
   const [localError, setLocalError] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [showPickForm, setShowPickForm] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [packageHistory, setPackageHistory] = useState([]);
+  const [editFormData, setEditFormData] = useState({});
   const [cachedDescriptions, setCachedDescriptions] = useState([]);
   const [showDescriptionDropdown, setShowDescriptionDropdown] = useState(false);
 
@@ -164,7 +171,7 @@ const PackageModals = ({
       setLocalError('Please fix the errors in the form');
       return;
     }
-    
+
     try {
       setIsLoading(true);
       setLocalError(null);
@@ -181,11 +188,106 @@ const PackageModals = ({
     }
   };
 
+  const handleReprintClick = async () => {
+    try {
+      setIsLoading(true);
+      setLocalError(null);
+      const response = await PackageService.reprintPackage(selectedPackage.id);
+
+      // Handle enhanced response with edit information
+      let successMessage = 'Package receipt reprinted successfully!';
+      if (response.attempts_used && response.max_attempts) {
+        successMessage += ` (Attempt ${response.attempts_used}/${response.max_attempts})`;
+      }
+
+      if (response.recent_edit) {
+        successMessage += `\nRecent edit: ${response.recent_edit}`;
+      }
+
+      setSuccess(successMessage);
+    } catch (err) {
+      setLocalError(err.message || 'Error reprinting receipt');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const resetPickupProcess = () => {
     setShowPickForm(false);
     setPickedBy({ memberId: '', name: '', phone: '' });
     setLocalError(null);
     setFieldErrors({});
+  };
+
+  const handleViewHistory = async () => {
+    try {
+      setIsLoading(true);
+      setLocalError(null);
+      const history = await PackageService.getPackageHistory(selectedPackage.id);
+      setPackageHistory(history);
+      setShowHistory(true);
+    } catch (err) {
+      setLocalError(err.message || 'Error loading package history');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEditPackage = () => {
+    // Initialize edit form with current package data
+    setEditFormData({
+      type: selectedPackage.package_type || selectedPackage.type || 'package',
+      description: selectedPackage.description || '',
+      recipient_name: selectedPackage.recipient_name || '',
+      recipient_phone: selectedPackage.recipient_phone || '',
+      dropped_by: selectedPackage.dropped_by || '',
+      dropper_phone: selectedPackage.dropper_phone || ''
+    });
+    setShowEditForm(true);
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      setIsLoading(true);
+      setLocalError(null);
+      await PackageService.updatePackage(selectedPackage.id, editFormData);
+
+      // Update the selectedPackage with new data for immediate UI update
+      const updatedPackage = {
+        ...selectedPackage,
+        package_type: editFormData.type,
+        type: editFormData.type,
+        description: editFormData.description,
+        recipient_name: editFormData.recipient_name,
+        recipient_phone: editFormData.recipient_phone,
+        dropped_by: editFormData.dropped_by,
+        dropper_phone: editFormData.dropper_phone,
+        last_updated: new Date().toISOString()
+      };
+
+      // Update the selected package state to show changes immediately
+      if (typeof setSelectedPackage === 'function') {
+        setSelectedPackage(updatedPackage);
+      }
+
+      setSuccess('Package updated successfully!');
+      setShowEditForm(false);
+      setEditFormData({});
+
+      // Refresh the package data to show updated information in table
+      if (refreshData) {
+        await refreshData();
+      }
+
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        if (setSuccess) setSuccess(null);
+      }, 3000);
+    } catch (err) {
+      setLocalError(err.message || 'Error updating package');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleInputChange = (e, fieldName, formType) => {
@@ -435,9 +537,9 @@ const PackageModals = ({
                     </div>
                     <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
                       <span className="detail-label" style={{ fontWeight: '600' }}>Type:</span>
-                      <span className="detail-value">{selectedPackage.type === 'document' ? 'Document' : 'Package'}</span>
+                      <span className="detail-value">{selectedPackage.package_type || selectedPackage.type}</span>
                     </div>
-                    
+
                     <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
                       <span className="detail-label" style={{ fontWeight: '600' }}>Shelf:</span>
                       <span className="detail-value shelf-number">{selectedPackage.shelf}</span>
@@ -448,7 +550,7 @@ const PackageModals = ({
                         {selectedPackage.status}
                       </span>
                     </div>
-                    
+
                     <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
                       <span className="detail-label" style={{ fontWeight: '600' }}>Recipient:</span>
                       <span className="detail-value">{selectedPackage.recipient_name}</span>
@@ -457,18 +559,35 @@ const PackageModals = ({
                       <span className="detail-label" style={{ fontWeight: '600' }}>Recipient No:</span>
                       <span className="detail-value">{selectedPackage.recipient_phone}</span>
                     </div>
-                    
+
                     <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
                       <span className="detail-label" style={{ fontWeight: '600' }}>Dropped By:</span>
                       <span className="detail-value">{selectedPackage.dropped_by}</span>
                     </div>
+                    <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
+                      <span className="detail-label" style={{ fontWeight: '600' }}>Dropper Phone:</span>
+                      <span className="detail-value">{selectedPackage.dropper_phone}</span>
+                    </div>
+
                     {selectedPackage.picked_by && (
                       <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
                         <span className="detail-label" style={{ fontWeight: '600' }}>Picked By:</span>
                         <span className="detail-value">{selectedPackage.picked_by}</span>
                       </div>
                     )}
-                    
+                    {selectedPackage.picker_phone && (
+                      <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
+                        <span className="detail-label" style={{ fontWeight: '600' }}>Picker Phone:</span>
+                        <span className="detail-value">{selectedPackage.picker_phone}</span>
+                      </div>
+                    )}
+                    {selectedPackage.picker_id && (
+                      <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
+                        <span className="detail-label" style={{ fontWeight: '600' }}>Picker ID:</span>
+                        <span className="detail-value">{selectedPackage.picker_id}</span>
+                      </div>
+                    )}
+
                     <div className="detail-item" style={{ display: 'flex', gap: '5px' }}>
                       <span className="detail-label" style={{ fontWeight: '600' }}>Date Dropped:</span>
                       <span className="detail-value">{new Date(selectedPackage.created_at).toLocaleString()}</span>
@@ -479,7 +598,7 @@ const PackageModals = ({
                         <span className="detail-value">{new Date(selectedPackage.picked_at).toLocaleString()}</span>
                       </div>
                     )}
-                    
+
                     <div className="detail-item" style={{ gridColumn: '1 / span 2', display: 'flex', gap: '5px' }}>
                       <span className="detail-label" style={{ fontWeight: '600' }}>Description:</span>
                       <span className="detail-value">{selectedPackage.description}</span>
@@ -489,7 +608,7 @@ const PackageModals = ({
 
                 {selectedPackage.status === 'pending' && (
                   <div className="modal-footer">
-                    <button 
+                    <button
                       className="btn btn-primary"
                       onClick={() => setShowPickForm(true)}
                     >
@@ -497,6 +616,31 @@ const PackageModals = ({
                     </button>
                   </div>
                 )}
+
+                {/* Action buttons for all packages */}
+                <div className="modal-footer">
+                  <button
+                    className="btn btn-outline-primary"
+                    onClick={handleEditPackage}
+                    disabled={isLoading}
+                  >
+                    Edit Package
+                  </button>
+                  <button
+                    className="btn btn-outline-info"
+                    onClick={handleViewHistory}
+                    disabled={isLoading}
+                  >
+                    View History
+                  </button>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={handleReprintClick}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Reprinting...' : 'Reprint Receipt'}
+                  </button>
+                </div>
               </>
             ) : (
               <div className="modal-body">
@@ -572,6 +716,242 @@ const PackageModals = ({
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Package History Modal */}
+      {showHistory && (
+        <div className="modal-overlay">
+          <div className="modal-content large-modal">
+            <div className="modal-header">
+              <h3>Package History - {selectedPackage.code}</h3>
+              <button
+                className="modal-close"
+                onClick={() => {
+                  setShowHistory(false);
+                  setPackageHistory([]);
+                }}
+                disabled={isLoading}
+              >
+                &times;
+              </button>
+            </div>
+
+            {isLoading && <div className="loading-bar"></div>}
+
+            {localError && (
+              <div className="modal-error">
+                <span className="error-icon">⚠️</span>
+                <span className="error-text">{localError}</span>
+                <button
+                  className="error-close"
+                  onClick={() => setLocalError(null)}
+                >
+                  &times;
+                </button>
+              </div>
+            )}
+
+            <div className="modal-body">
+              {packageHistory.length > 0 ? (
+                <div className="history-timeline" style={{
+                  maxHeight: '400px',
+                  overflowY: 'auto',
+                  padding: '10px'
+                }}>
+                  {packageHistory.map((entry, index) => (
+                    <div key={index} className="history-entry" style={{
+                      borderLeft: '3px solid #007bff',
+                      padding: '10px 15px',
+                      marginBottom: '15px',
+                      backgroundColor: '#f8f9fa',
+                      borderRadius: '4px',
+                      position: 'relative'
+                    }}>
+                      <div className="history-timestamp" style={{
+                        fontSize: '0.85rem',
+                        color: '#6c757d',
+                        marginBottom: '5px'
+                      }}>
+                        {new Date(entry.timestamp).toLocaleString()}
+                      </div>
+                      <div className="history-action" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        marginBottom: '5px'
+                      }}>
+                        <span className="history-user" style={{
+                          fontWeight: '600',
+                          color: '#007bff'
+                        }}>{entry.user}</span>
+                        <span className="history-description">{entry.action}</span>
+                      </div>
+                      {entry.details && (
+                        <div className="history-details" style={{
+                          fontSize: '0.9rem',
+                          color: '#495057',
+                          backgroundColor: '#e9ecef',
+                          padding: '8px',
+                          borderRadius: '3px',
+                          marginTop: '5px'
+                        }}>
+                          {entry.details}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="no-history" style={{
+                  textAlign: 'center',
+                  padding: '40px',
+                  color: '#6c757d'
+                }}>
+                  <p>No history available for this package.</p>
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <button
+                className="btn btn-secondary"
+                onClick={() => {
+                  setShowHistory(false);
+                  setPackageHistory([]);
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Package Modal */}
+      {showEditForm && (
+        <div className="modal-overlay">
+          <div className="modal-content medium-modal">
+            <div className="modal-header">
+              <h3>Edit Package - {selectedPackage.code}</h3>
+              <button
+                className="modal-close"
+                onClick={() => {
+                  setShowEditForm(false);
+                  setEditFormData({});
+                }}
+                disabled={isLoading}
+              >
+                &times;
+              </button>
+            </div>
+
+            {isLoading && <div className="loading-bar"></div>}
+
+            {localError && (
+              <div className="modal-error">
+                <span className="error-icon">⚠️</span>
+                <span className="error-text">{localError}</span>
+                <button
+                  className="error-close"
+                  onClick={() => setLocalError(null)}
+                >
+                  &times;
+                </button>
+              </div>
+            )}
+
+            <div className="modal-body">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Package Type</label>
+                  <select
+                    value={editFormData.type}
+                    onChange={(e) => setEditFormData({ ...editFormData, type: e.target.value })}
+                    disabled={isLoading}
+                  >
+                    <option value="package">Package</option>
+                    <option value="document">Document</option>
+                    <option value="keys">Keys</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Description</label>
+                  <input
+                    type="text"
+                    value={editFormData.description}
+                    onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Recipient Name</label>
+                  <input
+                    type="text"
+                    value={editFormData.recipient_name}
+                    onChange={(e) => setEditFormData({ ...editFormData, recipient_name: e.target.value })}
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Recipient Phone</label>
+                  <input
+                    type="tel"
+                    value={editFormData.recipient_phone}
+                    onChange={(e) => setEditFormData({ ...editFormData, recipient_phone: e.target.value })}
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Dropped By</label>
+                  <input
+                    type="text"
+                    value={editFormData.dropped_by}
+                    onChange={(e) => setEditFormData({ ...editFormData, dropped_by: e.target.value })}
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Dropper Phone</label>
+                  <input
+                    type="tel"
+                    value={editFormData.dropper_phone}
+                    onChange={(e) => setEditFormData({ ...editFormData, dropper_phone: e.target.value })}
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                className="btn btn-secondary"
+                onClick={() => {
+                  setShowEditForm(false);
+                  setEditFormData({});
+                }}
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleSaveEdit}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
           </div>
         </div>
       )}

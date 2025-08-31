@@ -33,13 +33,13 @@ const PackageTable = ({
       }} className="clickable-row">
         <td>{index + 1}</td> {/* Added numbering */}
         <td>
-        {pkg.type === 'document'
+        {pkg.package_type === 'document'
           ? '📄 '
-          : pkg.type === 'package'
+          : pkg.package_type === 'package'
           ? '📦 '
           : '🔑 '}
-      </td>  
-         <td>{pkg.description}</td>
+      </td>
+          <td>{pkg.description}</td>
         <td>{pkg.recipient_name}</td>
         <td>{pkg.recipient_phone}</td>
         <td>{isDropped ? pkg.dropped_by : pkg.picked_by || 'N/A'}</td>
