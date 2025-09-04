@@ -1,16 +1,19 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { FiCamera, FiUpload, FiX, FiAlertCircle, FiLink } from 'react-icons/fi';
+import { useNotification } from '../../../hooks/useNotification';
+import { compressImageFile, compressImageFromCanvas, getCompressionStats, needsCompression, getRecommendedSettings } from '../../../utils/imageCompression';
 
 export const ReportFoundForm = ({ onClose, onSubmit }) => {
+  const { success, error } = useNotification();
   const fileInputRef = useRef(null);
   const videoRef = useRef(null);
   const [formData, setFormData] = useState({
     type: 'card',
     card_last_four: '',
-    reporter_email: '', // Changed from email to reporter_email
+    reporter_email: '', 
     item_name: '',
     description: '',
-    place_found: '', // Changed from place_found to match your working example
+    place_found: '', 
     finder_name: '',
     finder_phone: '',
     owner_name: '',
@@ -21,6 +24,25 @@ export const ReportFoundForm = ({ onClose, onSubmit }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [photoError, setPhotoError] = useState(null);
+  const [compressionStats, setCompressionStats] = useState(null);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [compressionQuality, setCompressionQuality] = useState('auto'); // auto, high, medium, low
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
+
+  // Get compression settings based on quality selection
+  const getCompressionSettings = (file) => {
+    if (compressionQuality === 'auto') {
+      return getRecommendedSettings(file);
+    }
+
+    const qualityMap = {
+      high: { quality: 0.9, maxWidth: 1600, maxHeight: 1600 },
+      medium: { quality: 0.8, maxWidth: 1200, maxHeight: 1200 },
+      low: { quality: 0.6, maxWidth: 800, maxHeight: 800 }
+    };
+
+    return qualityMap[compressionQuality] || qualityMap.medium;
+  };
 
   useEffect(() => {
     return () => {
@@ -33,8 +55,8 @@ export const ReportFoundForm = ({ onClose, onSubmit }) => {
 
   const validateCardForm = () => {
     const newErrors = {};
-    if (!/^[A-Z]\d{4}[A-Z]?$/.test(formData.card_last_four)) {
-      newErrors.card_last_four = 'Please enter a valid card number (e.g., K1234 or K1234A)';
+    if (!/^[A-Z]\d{1,4}[A-Z]?$/i.test(formData.card_last_four)) {
+      newErrors.card_last_four = 'Please enter a valid card number (e.g., A1, B12, C123, D1234, A1A, B12B)';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -61,7 +83,7 @@ export const ReportFoundForm = ({ onClose, onSubmit }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
       // Validate file type
@@ -77,9 +99,35 @@ export const ReportFoundForm = ({ onClose, onSubmit }) => {
       }
 
       setPhotoError(null);
-      setPhotoPreview(URL.createObjectURL(file));
-      setFormData({ ...formData, photo: file });
-      setErrors({ ...errors, photo: null });
+      setIsCompressing(true);
+
+      try {
+        let processedFile = file;
+        let stats = null;
+
+        // Check if compression is needed
+        if (needsCompression(file)) {
+          console.log('🔧 Compressing image...');
+          const compressionSettings = getCompressionSettings(file);
+          processedFile = await compressImageFile(file, compressionSettings);
+          stats = getCompressionStats(file, processedFile);
+          console.log('✅ Compression complete:', stats);
+        }
+
+        setCompressionStats(stats);
+        setPhotoPreview(URL.createObjectURL(processedFile));
+        setFormData({ ...formData, photo: processedFile });
+        setErrors({ ...errors, photo: null });
+
+      } catch (error) {
+        console.error('❌ Image compression failed:', error);
+        setPhotoError('Failed to process image. Please try again.');
+        // Fallback to original file
+        setPhotoPreview(URL.createObjectURL(file));
+        setFormData({ ...formData, photo: file });
+      } finally {
+        setIsCompressing(false);
+      }
     }
   };
 
@@ -118,72 +166,127 @@ export const ReportFoundForm = ({ onClose, onSubmit }) => {
     setCameraActive(false);
   };
 
-  const takePhoto = () => {
+  const takePhoto = async () => {
     if (videoRef.current) {
-      const canvas = document.createElement('canvas');
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      setIsCompressing(true);
 
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const file = new File([blob], `photo_${Date.now()}.jpg`, { 
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = videoRef.current.videoWidth;
+        canvas.height = videoRef.current.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+
+        // Create original file for stats comparison
+        const originalBlob = await new Promise(resolve => {
+          canvas.toBlob(resolve, 'image/jpeg', 0.95);
+        });
+
+        if (originalBlob) {
+          const originalFile = new File([originalBlob], `photo_${Date.now()}_original.jpg`, {
             type: 'image/jpeg',
             lastModified: Date.now()
           });
-          setPhotoPreview(URL.createObjectURL(blob));
-          setFormData({ ...formData, photo: file });
+
+          // Create image from canvas for compression
+          const img = new Image();
+          img.src = canvas.toDataURL('image/jpeg', 0.95);
+
+          await new Promise((resolve) => {
+            img.onload = async () => {
+              console.log('📷 Compressing camera photo...');
+              const compressionSettings = getCompressionSettings(originalFile);
+              const compressedFile = await compressImageFromCanvas(
+                img,
+                `photo_${Date.now()}.jpg`,
+                compressionSettings
+              );
+
+              const stats = getCompressionStats(originalFile, compressedFile);
+              console.log('✅ Camera photo compression complete:', stats);
+
+              setCompressionStats(stats);
+              setPhotoPreview(URL.createObjectURL(compressedFile));
+              setFormData({ ...formData, photo: compressedFile });
+              resolve();
+            };
+          });
         }
-      }, 'image/jpeg', 0.95);
-      stopCamera();
+      } catch (error) {
+        console.error('❌ Camera photo compression failed:', error);
+        // Fallback to simple canvas method
+        const canvas = document.createElement('canvas');
+        canvas.width = videoRef.current.videoWidth;
+        canvas.height = videoRef.current.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], `photo_${Date.now()}.jpg`, {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            });
+            setPhotoPreview(URL.createObjectURL(blob));
+            setFormData({ ...formData, photo: file });
+            setCompressionStats(null);
+          }
+        }, 'image/jpeg', 0.8);
+      } finally {
+        setIsCompressing(false);
+        stopCamera();
+      }
     }
   };
 
-  const extractLastFourDigits = (cardNumber) => {
-    const digits = cardNumber.replace(/\D/g, '');
-    return digits.slice(-4);
-  };
 
   const handleCardSubmit = async (e) => {
     e.preventDefault();
     console.log('Card form submitted');
     if (!validateCardForm()) return;
-    
+
     setIsSubmitting(true);
-    
+
     try {
       const formPayload = new FormData();
-      
+
       formPayload.append('type', 'card');
-      const lastFourDigits = extractLastFourDigits(formData.card_last_four);
-      formPayload.append('card_last_four', lastFourDigits);
+      formPayload.append('card_last_four', formData.card_last_four);
       if (formData.reporter_email) {
         formPayload.append('reporter_email', formData.reporter_email); // Changed to reporter_email
       }
-      
+
       // Log all data being sent to backend
       console.log('Submitting card data:');
       console.log('- type:', 'card');
-      console.log('- card_last_four:', lastFourDigits);
+      console.log('- card_last_four:', formData.card_last_four);
       if (formData.reporter_email) {
         console.log('- reporter_email:', formData.reporter_email);
       }
-      
+
       // Also log the FormData object contents
       console.log('FormData contents:');
       for (let [key, value] of formPayload.entries()) {
         console.log(`- ${key}:`, value);
       }
-      
+
       onSubmit(formPayload);
+      success(
+        'Found Card Reported',
+        `Successfully reported card ${formData.card_last_four}`
+      );
       onClose();
-    } catch (error) {
-      console.error('Error submitting card form:', error);
-      setErrors({ 
-        ...errors, 
-        form: error.response?.data?.message || 'Failed to submit form. Please try again.' 
+    } catch (err) {
+      console.error('Error submitting card form:', err);
+      const errorMessage = err.response?.data?.message || 'Failed to submit form. Please try again.';
+      setErrors({
+        ...errors,
+        form: errorMessage
       });
+      error(
+        'Failed to Report Found Card',
+        errorMessage
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -254,13 +357,22 @@ export const ReportFoundForm = ({ onClose, onSubmit }) => {
       }
       
       onSubmit(formPayload);
+      success(
+        'Found Item Reported',
+        `Successfully reported ${formData.item_name}`
+      );
       onClose();
-    } catch (error) {
-      console.error('Error submitting item form:', error);
-      setErrors({ 
-        ...errors, 
-        form: error.response?.data?.message || 'Failed to submit form. Please try again.' 
+    } catch (err) {
+      console.error('Error submitting item form:', err);
+      const errorMessage = err.response?.data?.message || 'Failed to submit form. Please try again.';
+      setErrors({
+        ...errors,
+        form: errorMessage
       });
+      error(
+        'Failed to Report Found Item',
+        errorMessage
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -314,7 +426,7 @@ export const ReportFoundForm = ({ onClose, onSubmit }) => {
                 <input
                   className={`lf-form-control ${errors.card_last_four ? 'is-invalid' : ''}`}
                   type="text"
-                  placeholder="e.g., K1234 or K1234A"
+                  placeholder="e.g., A1, B12, C123, D1234, A1A, B12B"
                   maxLength="6"
                   value={formData.card_last_four}
                   onChange={(e) => {
@@ -333,7 +445,7 @@ export const ReportFoundForm = ({ onClose, onSubmit }) => {
                   </div>
                 )}
                 <small className="form-text text-muted">
-                  Enter full card number (e.g., K1234A). Only last 4 digits will be stored.
+                  Enter card number (e.g., A1, B12, C123, D1234, A1A, B12B). The full card identifier will be stored securely.
                 </small>
               </div>
 
@@ -391,21 +503,56 @@ export const ReportFoundForm = ({ onClose, onSubmit }) => {
                 <label>Photo *</label>
                 {photoPreview ? (
                   <>
-                    <img 
-                      src={photoPreview} 
-                      alt="Preview" 
+                    <img
+                      src={photoPreview}
+                      alt="Preview"
                       className="lf-photo-preview"
                     />
-                    <button 
-                      type="button" 
-                      className="lf-btn lf-btn-secondary"
-                      onClick={() => {
-                        setFormData({ ...formData, photo: null });
-                        setPhotoPreview(null);
-                      }}
-                    >
-                      <FiX /> Retake
-                    </button>
+                    <div className="lf-photo-actions">
+                      <button
+                        type="button"
+                        className="lf-btn lf-btn-secondary"
+                        onClick={() => {
+                          setFormData({ ...formData, photo: null });
+                          setPhotoPreview(null);
+                          setCompressionStats(null);
+                        }}
+                      >
+                        <FiX /> Retake
+                      </button>
+                    </div>
+
+                    {/* Compression Stats Display */}
+                    {compressionStats && (
+                      <div className="lf-compression-stats">
+                        <div className="lf-compression-header">
+                          <FiUpload size={14} />
+                          <span>Image Optimized</span>
+                        </div>
+                        <div className="lf-compression-details">
+                          <div className="lf-compression-row">
+                            <span>Original:</span>
+                            <span>{compressionStats.originalSize}</span>
+                          </div>
+                          <div className="lf-compression-row">
+                            <span>Compressed:</span>
+                            <span>{compressionStats.compressedSize}</span>
+                          </div>
+                          <div className="lf-compression-row lf-compression-savings">
+                            <span>Saved:</span>
+                            <span>{compressionStats.sizeReduction} ({compressionStats.compressionRatio})</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Compression Loading Indicator */}
+                    {isCompressing && (
+                      <div className="lf-compression-loading">
+                        <div className="lf-spinner"></div>
+                        <span>Optimizing image...</span>
+                      </div>
+                    )}
                   </>
                 ) : cameraActive ? (
                   <>
@@ -467,6 +614,39 @@ export const ReportFoundForm = ({ onClose, onSubmit }) => {
                   <div className="lf-error-feedback">
                     <FiAlertCircle className="lf-error-icon" />
                     {errors.photo || photoError}
+                  </div>
+                )}
+
+                {/* Advanced Settings Toggle */}
+                <div className="lf-advanced-settings-toggle">
+                  <button
+                    type="button"
+                    className="lf-btn lf-btn-link"
+                    onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
+                  >
+                    {showAdvancedSettings ? 'Hide' : 'Show'} Advanced Settings
+                  </button>
+                </div>
+
+                {/* Advanced Settings */}
+                {showAdvancedSettings && (
+                  <div className="lf-advanced-settings">
+                    <div className="lf-form-group">
+                      <label>Image Quality</label>
+                      <select
+                        className="lf-form-control"
+                        value={compressionQuality}
+                        onChange={(e) => setCompressionQuality(e.target.value)}
+                      >
+                        <option value="auto">Auto (Recommended)</option>
+                        <option value="high">High Quality</option>
+                        <option value="medium">Medium Quality</option>
+                        <option value="low">Low Quality</option>
+                      </select>
+                      <small className="form-text text-muted">
+                        Auto mode automatically chooses the best quality based on file size
+                      </small>
+                    </div>
                   </div>
                 )}
               </div>

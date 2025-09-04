@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Reception System</string>
+    <string name="title_activity_main">Reception System</string>
+    <string name="package_name">com.receptionsystem.app</string>
+    <string name="custom_url_scheme">com.receptionsystem.app</string>
+</resources>

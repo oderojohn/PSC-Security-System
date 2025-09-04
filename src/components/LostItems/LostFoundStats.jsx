@@ -125,7 +125,7 @@ const LostFoundStats = ({
               className={`tab-button ${activeTab === 'lost-cards' ? 'active' : ''}`}
               onClick={() => handleTabClick('lost-cards')}
             >
-              <FiCreditCard size={16} /> Lost Cards 
+              <FiCreditCard size={16} /> Lost Cards
             </button>
             <button
               className={`tab-button ${activeTab === 'lost-items' ? 'active' : ''}`}
@@ -176,13 +176,13 @@ const LostFoundStats = ({
             </button>
             {(activeTab.includes('lost') || activeTab.includes('found')) && (
                <div className="dropdown-container" ref={dropdownRef}>
-                 <button
+                 {/* <button
                    className="add-button tertiary dropdown-toggle"
                    onClick={() => setShowExportDropdown(!showExportDropdown)}
                    title="Export Options"
                  >
                    <FiDownload size={16} /> Export <FiChevronDown size={14} />
-                 </button>
+                 </button> */}
                  {showExportDropdown && (
                    <div className="dropdown-menu">
                      <button

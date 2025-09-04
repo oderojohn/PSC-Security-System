@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { FiLink, FiAlertCircle, FiX } from 'react-icons/fi';
 import { LostFoundService } from '../../../service/api/api';
+import { useNotification } from '../../../hooks/useNotification';
 import '../../../assets/css/LostFoundForm.css';
 
 export const ReportLostForm = ({ onClose, onSubmit }) => {
+  const { success, error } = useNotification();
   const [formData, setFormData] = useState({
     type: 'card',
     card_last_four: '',
@@ -20,9 +22,9 @@ export const ReportLostForm = ({ onClose, onSubmit }) => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (formData.type === 'card' && !/^[A-Z]\d{1,4}$/i.test(formData.card_last_four)) {
+    if (formData.type === 'card' && !/^[A-Z]\d{1,4}[A-Z]?$/i.test(formData.card_last_four)) {
       newErrors.card_last_four =
-        'Card number must start with a letter followed by 1 to 4 digits (e.g., A1, b12, c123, d1234)';
+        'Card number must start with a letter followed by 1 to 4 digits and optional last letter (e.g., A1, b12, c123, d1234, A1A, B12B)';
     }
     if (formData.type === 'item' && !formData.item_name.trim()) {
       newErrors.item_name = 'Item name is required';
@@ -57,8 +59,11 @@ export const ReportLostForm = ({ onClose, onSubmit }) => {
         status: 'pending'
       };
     } else {
+      // For item type, map email to reporter_email as expected by backend
+      const { email, ...restFormData } = formData;
       payload = {
-        ...formData,
+        ...restFormData,
+        reporter_email: email || null,
         status: 'pending'
       };
     }
@@ -70,10 +75,20 @@ export const ReportLostForm = ({ onClose, onSubmit }) => {
       onSubmit(createdItem);
     }
 
+    success(
+      'Lost Item Reported',
+      `Successfully reported ${formData.type === 'card' ? 'card' : formData.item_name || 'item'}`
+    );
+
     onClose();
-  } catch (error) {
-    console.error('Error creating lost item:', error);
-    setErrors({ ...errors, form: 'Failed to submit form. Please try again later.' });
+  } catch (err) {
+    console.error('Error creating lost item:', err);
+    const errorMessage = err.response?.data?.message || 'Failed to submit form. Please try again later.';
+    setErrors({ ...errors, form: errorMessage });
+    error(
+      'Failed to Report Lost Item',
+      errorMessage
+    );
   } finally {
     setIsSubmitting(false);
   }
@@ -117,12 +132,12 @@ export const ReportLostForm = ({ onClose, onSubmit }) => {
                   <input
                     className={`lf-form-control ${errors.card_last_four ? 'is-invalid' : ''}`}
                     type="text"
-                    placeholder="A1, B12, C123, D1234"
-                    maxLength="5"
+                    placeholder="A1, B12, C123, D1234, A1A, B12B"
+                    maxLength="6"
                     value={formData.card_last_four}
                     onChange={(e) => {
                       const input = e.target.value.toUpperCase();
-                      const valid = /^[A-Z]\d{0,4}$/i.test(input);
+                      const valid = /^[A-Z]\d{0,4}[A-Z]?$/i.test(input);
                       if (valid || input === '') {
                         setFormData({ ...formData, card_last_four: input });
                       }

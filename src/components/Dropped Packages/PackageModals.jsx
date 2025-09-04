@@ -29,11 +29,14 @@ const PackageModals = ({
   const [showEditForm, setShowEditForm] = useState(false);
   const [packageHistory, setPackageHistory] = useState([]);
   const [editFormData, setEditFormData] = useState({});
+  const [editFieldErrors, setEditFieldErrors] = useState({});
   const [cachedDescriptions, setCachedDescriptions] = useState([]);
   const [showDescriptionDropdown, setShowDescriptionDropdown] = useState(false);
 
-  // Phone number validation regex
-  const phoneOrMemberRegex = /^[0-9]{10,15}$|^[A-Za-z]\d{1,4}[A-Za-z]?$/;
+  // Phone number validation regex (digits only, at least 10)
+  const phoneRegex = /^[0-9]{10,}$/;
+  // Member ID validation regex
+  const memberIdRegex = /^(?:[A-Za-z]\d{3,18}[A-Za-z]?|\d{5,20})$/;
   // Name validation regex (letters, spaces, hyphens, apostrophes)
   const nameRegex = /^[a-zA-Z\s\-']{2,50}$/;
   // Description validation (at least 5 characters)
@@ -67,7 +70,7 @@ const PackageModals = ({
 
   const validateField = (fieldName, value) => {
     const errors = { ...fieldErrors };
-    
+
     switch (fieldName) {
       case 'description':
         if (!value) {
@@ -78,47 +81,96 @@ const PackageModals = ({
           delete errors.description;
         }
         break;
-        
+
       case 'recipientName':
       case 'droppedBy':
-      case 'name':
+        // For drop form - these remain required
         if (!value) {
           errors[fieldName] = 'Name is required';
         } else if (!nameRegex.test(value)) {
-          errors[fieldName] = 'Enter a valid name (3-50 characters)';
+          errors[fieldName] = 'Enter a valid name (2-50 characters)';
         } else {
           delete errors[fieldName];
         }
         break;
-        
+
       case 'recipientPhone':
       case 'dropperPhone':
-      case 'phone':
+        // For drop form - these remain required
         if (!value) {
           errors[fieldName] = 'Phone number or Member ID is required';
-        } else if (!phoneOrMemberRegex.test(value)) {
+        } else if (!phoneRegex.test(value) && !memberIdRegex.test(value)) {
+          errors[fieldName] = 'Enter a valid phone number (10+ digits) or Member ID (e.g., K1234)';
         } else {
           delete errors[fieldName];
         }
         break;
-        
+
+      case 'name':
+        // For pickup form - optional, but validate format if provided
+        if (value && !nameRegex.test(value)) {
+          errors[fieldName] = 'Enter a valid name (2-50 characters)';
+        } else {
+          delete errors[fieldName];
+        }
+        break;
+
+      case 'phone':
+        // For pickup form - optional, but validate format if provided
+        if (value && !phoneRegex.test(value) && !memberIdRegex.test(value)) {
+          errors[fieldName] = 'Enter a valid phone number (10+ digits) or Member ID (e.g., K1234)';
+        } else {
+          delete errors[fieldName];
+        }
+        break;
+
       case 'memberId':
-        const memberIdRegex = /^(?:[A-Za-z]\d{3,18}[A-Za-z]?|\d{5,20})$/;
-        if (!value) {
-          errors.memberId = 'ID/Member number is required';
-        } else if (!memberIdRegex.test(value)) {
+        // For pickup form - optional, but validate format if provided
+        if (value && !memberIdRegex.test(value)) {
           errors.memberId = 'Enter a valid ID (e.g., M1234, K1234A, or numeric ID)';
         } else {
           delete errors.memberId;
         }
         break;
-        
+
       default:
         break;
     }
-    
+
     setFieldErrors(errors);
     return !errors[fieldName]; // returns true if valid
+  };
+
+  const validateEditForm = () => {
+    const errors = {};
+
+    // Description
+    if (!editFormData.description || editFormData.description.length < 5 || editFormData.description.length > 500) {
+      errors.description = 'Description must be 5-500 characters';
+    }
+
+    // Recipient Name
+    if (!editFormData.recipient_name || !nameRegex.test(editFormData.recipient_name)) {
+      errors.recipient_name = 'Enter a valid name (2-50 characters)';
+    }
+
+    // Recipient Phone
+    if (!editFormData.recipient_phone || (!phoneRegex.test(editFormData.recipient_phone) && !memberIdRegex.test(editFormData.recipient_phone))) {
+      errors.recipient_phone = 'Enter a valid phone number (10+ digits) or Member ID (e.g., K1234)';
+    }
+
+    // Dropped By
+    if (!editFormData.dropped_by || !nameRegex.test(editFormData.dropped_by)) {
+      errors.dropped_by = 'Enter a valid name (2-50 characters)';
+    }
+
+    // Dropper Phone
+    if (!editFormData.dropper_phone || (!phoneRegex.test(editFormData.dropper_phone) && !memberIdRegex.test(editFormData.dropper_phone))) {
+      errors.dropper_phone = 'Enter a valid phone number (10+ digits) or Member ID (e.g., K1234)';
+    }
+
+    setEditFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleDropClick = async () => {
@@ -135,11 +187,33 @@ const PackageModals = ({
       setLocalError('Please fix the errors in the form');
       return;
     }
-    
+
+    // Prepare data for API - determine if phone or member ID
+    const packageData = {
+      type: newDroppedPackage.type,
+      description: newDroppedPackage.description,
+      recipient_name: newDroppedPackage.recipientName,
+      dropped_by: newDroppedPackage.droppedBy
+    };
+
+    // Check recipient phone/ID
+    if (phoneRegex.test(newDroppedPackage.recipientPhone)) {
+      packageData.recipient_phone = newDroppedPackage.recipientPhone;
+    } else {
+      packageData.recipient_id = newDroppedPackage.recipientPhone;
+    }
+
+    // Check dropper phone/ID
+    if (phoneRegex.test(newDroppedPackage.dropperPhone)) {
+      packageData.dropper_phone = newDroppedPackage.dropperPhone;
+    } else {
+      packageData.dropper_id = newDroppedPackage.dropperPhone;
+    }
+
     try {
       setIsLoading(true);
       setLocalError(null);
-      await handleDropPackage();
+      await handleDropPackage(packageData);
       addToDescriptionCache(newDroppedPackage.description);
       setSuccess('Package dropped successfully!');
       setShowDropModal(false);
@@ -160,12 +234,28 @@ const PackageModals = ({
   };
 
   const handlePickClick = async () => {
-    // Validate all pick package fields
-    const isValid = [
-      validateField('memberId', pickedBy.memberId),
-      validateField('name', pickedBy.name),
-      validateField('phone', pickedBy.phone)
-    ].every(Boolean);
+    // Check if at least one field has content
+    const hasContent = pickedBy.memberId.trim() || pickedBy.name.trim() || pickedBy.phone.trim();
+
+    if (!hasContent) {
+      setLocalError('Please provide at least one piece of identification (Member ID, Name, or Phone)');
+      return;
+    }
+
+    // Validate format of provided fields (optional validation)
+    const validations = [];
+    if (pickedBy.memberId.trim()) {
+      validations.push(validateField('memberId', pickedBy.memberId));
+    }
+    if (pickedBy.name.trim()) {
+      validations.push(validateField('name', pickedBy.name));
+    }
+    if (pickedBy.phone.trim()) {
+      validations.push(validateField('phone', pickedBy.phone));
+    }
+
+    // Check if all provided fields are valid
+    const isValid = validations.every(Boolean);
 
     if (!isValid) {
       setLocalError('Please fix the errors in the form');
@@ -236,21 +326,49 @@ const PackageModals = ({
   const handleEditPackage = () => {
     // Initialize edit form with current package data
     setEditFormData({
-      type: selectedPackage.package_type || selectedPackage.type || 'package',
+      type: (selectedPackage.package_type || selectedPackage.type || 'package').toLowerCase(),
       description: selectedPackage.description || '',
       recipient_name: selectedPackage.recipient_name || '',
       recipient_phone: selectedPackage.recipient_phone || '',
       dropped_by: selectedPackage.dropped_by || '',
       dropper_phone: selectedPackage.dropper_phone || ''
     });
+    setEditFieldErrors({});
     setShowEditForm(true);
   };
 
   const handleSaveEdit = async () => {
+    if (!validateEditForm()) {
+      setLocalError('Please fix the errors in the form');
+      return;
+    }
+
+    // Prepare data for API - determine if phone or member ID
+    const updateData = {
+      type: editFormData.type,
+      description: editFormData.description,
+      recipient_name: editFormData.recipient_name,
+      dropped_by: editFormData.dropped_by
+    };
+
+    // Check recipient phone/ID
+    if (phoneRegex.test(editFormData.recipient_phone)) {
+      updateData.recipient_phone = editFormData.recipient_phone;
+    } else {
+      updateData.recipient_id = editFormData.recipient_phone;
+    }
+
+    // Check dropper phone/ID
+    if (phoneRegex.test(editFormData.dropper_phone)) {
+      updateData.dropper_phone = editFormData.dropper_phone;
+    } else {
+      updateData.dropper_id = editFormData.dropper_phone;
+    }
+
     try {
       setIsLoading(true);
       setLocalError(null);
-      await PackageService.updatePackage(selectedPackage.id, editFormData);
+      await PackageService.updatePackage(selectedPackage.id, updateData);
 
       // Update the selectedPackage with new data for immediate UI update
       const updatedPackage = {
@@ -273,6 +391,7 @@ const PackageModals = ({
       setSuccess('Package updated successfully!');
       setShowEditForm(false);
       setEditFormData({});
+      setEditFieldErrors({});
 
       // Refresh the package data to show updated information in table
       if (refreshData) {
@@ -347,7 +466,7 @@ const PackageModals = ({
                   <label>Package Type</label>
                   <select
                     value={newDroppedPackage.type}
-                    onChange={(e) => setNewDroppedPackage({ ...newDroppedPackage, type: e.target.value })}
+                    onChange={(e) => setNewDroppedPackage({ ...newDroppedPackage, type: e.target.value.toLowerCase() })}
                     disabled={isLoading}
                   >
                     <option value="package">Package</option>
@@ -415,7 +534,7 @@ const PackageModals = ({
                   <label>Recipient Phone/Member NO</label>
                   <input
                     type="tel"
-                    placeholder="e.g., 0712345678"
+                    placeholder="e.g., 0712345678 or K1234"
                     value={newDroppedPackage.recipientPhone}
                     onChange={(e) => handleInputChange(e, 'recipientPhone', 'drop')}
                     disabled={isLoading}
@@ -447,7 +566,7 @@ const PackageModals = ({
                   <label>Your Phone/Member NO</label>
                   <input
                     type="tel"
-                    placeholder="e.g., 0712345678"
+                    placeholder="e.g., 0712345678 or K1234"
                     value={newDroppedPackage.dropperPhone}
                     onChange={(e) => handleInputChange(e, 'dropperPhone', 'drop')}
                     disabled={isLoading}
@@ -646,10 +765,13 @@ const PackageModals = ({
               <div className="modal-body">
                 <div className="pickup-instructions">
                   <p>Please provide your details to verify this pickup:</p>
+                  <p style={{fontSize: '0.85rem', color: '#6c757d', marginTop: '5px'}}>
+                    At least one field is required. All fields are optional but must be valid if provided.
+                  </p>
                 </div>
-                
+
                 <div className="form-group">
-                  <label>Member ID/ID Number</label>
+                  <label>Member ID/ID Number <span style={{fontSize: '0.8rem', color: '#6c757d'}}>(Optional)</span></label>
                   <input
                     type="text"
                     placeholder="Your identification number"
@@ -664,7 +786,7 @@ const PackageModals = ({
                 </div>
 
                 <div className="form-group">
-                  <label>Full Name</label>
+                  <label>Full Name <span style={{fontSize: '0.8rem', color: '#6c757d'}}>(Optional)</span></label>
                   <input
                     type="text"
                     placeholder="Your full name as per ID"
@@ -679,10 +801,10 @@ const PackageModals = ({
                 </div>
 
                 <div className="form-group">
-                  <label>Phone Number/Member No</label>
+                  <label>Phone Number/Member No <span style={{fontSize: '0.8rem', color: '#6c757d'}}>(Optional)</span></label>
                   <input
                     type="tel"
-                    placeholder="Your active phone number"
+                    placeholder="Your active phone number or Member ID"
                     value={pickedBy.phone}
                     onChange={(e) => handleInputChange(e, 'phone', 'pick')}
                     disabled={isLoading}
@@ -694,17 +816,17 @@ const PackageModals = ({
                 </div>
 
                 <div className="modal-footer">
-                  <button 
+                  <button
                     className="btn btn-secondary"
                     onClick={resetPickupProcess}
                     disabled={isLoading}
                   >
                     Back to Details
                   </button>
-                  <button 
+                  <button
                     className="btn btn-primary"
                     onClick={handlePickClick}
-                    disabled={isLoading || Object.keys(fieldErrors).length > 0}
+                    disabled={isLoading || !pickedBy.memberId.trim() && !pickedBy.name.trim() && !pickedBy.phone.trim() || Object.keys(fieldErrors).length > 0}
                   >
                     {isLoading ? (
                       <>
@@ -840,6 +962,7 @@ const PackageModals = ({
                 onClick={() => {
                   setShowEditForm(false);
                   setEditFormData({});
+                  setEditFieldErrors({});
                 }}
                 disabled={isLoading}
               >
@@ -868,7 +991,7 @@ const PackageModals = ({
                   <label>Package Type</label>
                   <select
                     value={editFormData.type}
-                    onChange={(e) => setEditFormData({ ...editFormData, type: e.target.value })}
+                    onChange={(e) => setEditFormData({ ...editFormData, type: e.target.value.toLowerCase() })}
                     disabled={isLoading}
                   >
                     <option value="package">Package</option>
@@ -884,7 +1007,11 @@ const PackageModals = ({
                     value={editFormData.description}
                     onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
                     disabled={isLoading}
+                    className={editFieldErrors.description ? 'error' : ''}
                   />
+                  {editFieldErrors.description && (
+                    <span className="field-error">{editFieldErrors.description}</span>
+                  )}
                 </div>
               </div>
 
@@ -896,17 +1023,25 @@ const PackageModals = ({
                     value={editFormData.recipient_name}
                     onChange={(e) => setEditFormData({ ...editFormData, recipient_name: e.target.value })}
                     disabled={isLoading}
+                    className={editFieldErrors.recipient_name ? 'error' : ''}
                   />
+                  {editFieldErrors.recipient_name && (
+                    <span className="field-error">{editFieldErrors.recipient_name}</span>
+                  )}
                 </div>
 
                 <div className="form-group">
-                  <label>Recipient Phone</label>
+                  <label>Recipient Phone/Member ID</label>
                   <input
                     type="tel"
                     value={editFormData.recipient_phone}
                     onChange={(e) => setEditFormData({ ...editFormData, recipient_phone: e.target.value })}
                     disabled={isLoading}
+                    className={editFieldErrors.recipient_phone ? 'error' : ''}
                   />
+                  {editFieldErrors.recipient_phone && (
+                    <span className="field-error">{editFieldErrors.recipient_phone}</span>
+                  )}
                 </div>
               </div>
 
@@ -918,17 +1053,25 @@ const PackageModals = ({
                     value={editFormData.dropped_by}
                     onChange={(e) => setEditFormData({ ...editFormData, dropped_by: e.target.value })}
                     disabled={isLoading}
+                    className={editFieldErrors.dropped_by ? 'error' : ''}
                   />
+                  {editFieldErrors.dropped_by && (
+                    <span className="field-error">{editFieldErrors.dropped_by}</span>
+                  )}
                 </div>
 
                 <div className="form-group">
-                  <label>Dropper Phone</label>
+                  <label>Dropper Phone/Member ID</label>
                   <input
                     type="tel"
                     value={editFormData.dropper_phone}
                     onChange={(e) => setEditFormData({ ...editFormData, dropper_phone: e.target.value })}
                     disabled={isLoading}
+                    className={editFieldErrors.dropper_phone ? 'error' : ''}
                   />
+                  {editFieldErrors.dropper_phone && (
+                    <span className="field-error">{editFieldErrors.dropper_phone}</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -939,6 +1082,7 @@ const PackageModals = ({
                 onClick={() => {
                   setShowEditForm(false);
                   setEditFormData({});
+                  setEditFieldErrors({});
                 }}
                 disabled={isLoading}
               >

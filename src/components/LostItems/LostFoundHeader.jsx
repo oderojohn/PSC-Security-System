@@ -1,8 +1,8 @@
 import React from 'react';
-import { FiPackage, FiSearch } from 'react-icons/fi';
+import { FiPackage, FiSearch, FiDatabase } from 'react-icons/fi';
 
 
-const LostFoundHeader = ({ searchTerm, setSearchTerm, activeTab }) => (
+const LostFoundHeader = ({ searchTerm, setSearchTerm, activeTab, cacheStats }) => (
   <div className="dashboard-header">
     <h2>
       <FiPackage size={18} /> Lost & Found Dashboard
@@ -17,9 +17,14 @@ const LostFoundHeader = ({ searchTerm, setSearchTerm, activeTab }) => (
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
-      {/* <span className="active-tab-indicator">
-        {activeTab === 'lost' ? 'Viewing Lost Items' : 'Viewing Found Items'}
-      </span> */}
+
+      {/* Cache Status Indicator */}
+      {cacheStats && cacheStats.totalEntries > 0 && (
+        <div className="cache-indicator" title={`Cache: ${cacheStats.totalEntries} entries (${cacheStats.memoryEntries} in memory, ${cacheStats.localStorageEntries} in storage)`}>
+          <FiDatabase size={14} />
+          <span className="cache-count">{cacheStats.totalEntries}</span>
+        </div>
+      )}
     </div>
   </div>
 );

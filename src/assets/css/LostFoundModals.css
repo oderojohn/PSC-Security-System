@@ -9,7 +9,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 10000;
   backdrop-filter: blur(3px);
   animation: lf-fadeIn 0.3s ease-out;
   overflow: hidden; /* Prevent scrolling on body when modal is open */
@@ -79,18 +79,24 @@
     width: 95%;
     max-height: 85vh;
   }
-  
+
   .lf-modal-header,
   .lf-modal-footer {
     padding: 1rem;
   }
-  
+
   .lf-modal-body {
     padding: 1rem;
   }
-  
+
   .lf-btn {
     padding: 0.5rem 1rem;
+  }
+
+  .lf-form-group input,
+  .lf-form-group select,
+  .lf-form-group textarea {
+    font-size: 16px; /* Prevent zoom on iOS */
   }
 }
 
@@ -127,12 +133,128 @@
 }
 
 @keyframes lf-slideUp {
-  from { 
+  from {
     transform: translateY(20px);
     opacity: 0.9;
   }
-  to { 
+  to {
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+/* Image Compression Styles */
+.lf-compression-stats {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  margin-top: 12px;
+  font-size: 0.85rem;
+}
+
+.lf-compression-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--success-color);
+  margin-bottom: 8px;
+}
+
+.lf-compression-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lf-compression-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.lf-compression-savings {
+  color: var(--success-color);
+  font-weight: 600;
+  border-top: 1px solid var(--border-primary);
+  padding-top: 6px;
+  margin-top: 6px;
+}
+
+.lf-compression-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.lf-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border-primary);
+  border-top: 2px solid var(--primary-color);
+  border-radius: 50%;
+  animation: lf-spin 1s linear infinite;
+}
+
+@keyframes lf-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.lf-photo-actions {
+  margin-top: 8px;
+}
+
+/* Advanced Settings Styles */
+.lf-advanced-settings-toggle {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.lf-btn-link {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 4px 8px;
+}
+
+.lf-btn-link:hover {
+  color: var(--primary-hover);
+}
+
+.lf-advanced-settings {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-primary);
+}
+
+.lf-advanced-settings .lf-form-group {
+  margin-bottom: 12px;
+}
+
+.lf-advanced-settings .lf-form-group:last-child {
+  margin-bottom: 0;
+}
+
+.lf-advanced-settings label {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.lf-advanced-settings .form-text {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
 }

@@ -20,6 +20,7 @@ const LostFoundTable = ({
   loadingMatches = false
 }) => {
   if (activeTab === 'matches') {
+    console.log("🔍 Rendering MatchesTable with:", { potentialMatches, loadingMatches });
     return (
       <MatchesTable
         potentialMatches={potentialMatches}

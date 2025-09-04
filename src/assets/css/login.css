@@ -131,6 +131,32 @@
 .login-footer a:hover {
   text-decoration: underline;
 }
+
+/* Mobile improvements for login */
+@media (max-width: 480px) {
+  .login-container {
+    padding: 10px;
+  }
+
+  .login-card {
+    padding: 30px 20px;
+    max-width: none;
+    width: 100%;
+  }
+
+  .login-header h2 {
+    font-size: 20px;
+  }
+
+  .form-group input {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+
+  .login-button {
+    font-size: 16px;
+    min-height: 48px;
+  }
+}
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }

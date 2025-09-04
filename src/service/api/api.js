@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { cacheService, CacheInvalidation } from '../cache/cacheService';
 
 // const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:8000/api/`;
-const API_BASE_URL = `http://127.0.0.1:8000/api/`;
+const API_BASE_URL = `http://localhost:8000/api/`;
 
 
 // Axios instance
@@ -236,7 +237,15 @@ export const AuthService = {
 export const LostFoundService = {
   // 🔹 Lost Items
   getLostItems: async (params = {}) => {
+    const cacheKey = 'items/lost';
+    const cachedData = cacheService.get(cacheKey, params);
+
+    if (cachedData) {
+      return cachedData;
+    }
+
     const response = await api.get('items/lost/', { params });
+    cacheService.set(cacheKey, params, response.data);
     return response.data;
   },
   getLostCards: async (params = {}) => {
@@ -253,23 +262,48 @@ export const LostFoundService = {
   },
 
   getPotentialMatchesForLostItem: async () => {
+    const cacheKey = 'items/found/generate_matches';
+    const cachedData = cacheService.get(cacheKey);
+
+    if (cachedData) {
+      return cachedData;
+    }
+
     const response = await api.get(`/items/found/generate_matches/`);
+    cacheService.set(cacheKey, {}, response.data);
     return response.data;
   },
 
   createLostItem: async (data) => {
     const response = await api.post('/items/lost/', data);
+    // Clear relevant caches after creating new item
+    CacheInvalidation.clearItemsCache();
+    CacheInvalidation.clearStatsCache();
+    CacheInvalidation.clearMatchesCache();
     return response.data;
   },
 
   markAsFound: async (id) => {
     const response = await api.post(`/items/lost/${id}/mark_found/`);
+    // Clear relevant caches after marking item as found
+    CacheInvalidation.clearItemsCache();
+    CacheInvalidation.clearStatsCache();
+    CacheInvalidation.clearMatchesCache();
+    CacheInvalidation.clearPickupsCache();
     return response.data;
   },
 
   // 🔹 Found Items
   getFoundItems: async (params = {}) => {
+    const cacheKey = 'items/found';
+    const cachedData = cacheService.get(cacheKey, params);
+
+    if (cachedData) {
+      return cachedData;
+    }
+
     const response = await api.get('/items/found/', { params });
+    cacheService.set(cacheKey, params, response.data);
     return response.data;
   },
   getFoundCards: async (params = {}) => {
@@ -292,6 +326,7 @@ export const LostFoundService = {
 
   createFoundItem: async (data) => {
   let payload = data;
+  let headers = {};
 
   // If data is plain object with photo, convert to FormData
   if (!(data instanceof FormData)) {
@@ -302,17 +337,27 @@ export const LostFoundService = {
       }
     });
     payload = formPayload;
+    headers = { "Content-Type": "multipart/form-data" };
+  } else {
+    // If it's already FormData, still set the content type
+    headers = { "Content-Type": "multipart/form-data" };
   }
 
-  const response = await api.post("/items/found/", payload, {
-    headers: { "Content-Type": "multipart/form-data" }
-  });
+  const response = await api.post("/items/found/", payload, { headers });
+  // Clear relevant caches after creating new item
+  CacheInvalidation.clearItemsCache();
+  CacheInvalidation.clearStatsCache();
+  CacheInvalidation.clearMatchesCache();
   return response.data;
 },
 
 
   pickFoundItem: async (id, pickerData) => {
     const response = await api.post(`/items/found/${id}/pick/`, pickerData);
+    // Clear relevant caches after picking up item
+    CacheInvalidation.clearItemsCache();
+    CacheInvalidation.clearStatsCache();
+    CacheInvalidation.clearPickupsCache();
     return response.data;
   },
 
@@ -326,9 +371,17 @@ export const LostFoundService = {
 
   // 🔹 Pickups
   getRecentPickups: async () => {
+    const cacheKey = 'items/pickuplogs/pickuphistory';
+    const cachedData = cacheService.get(cacheKey);
+
+    if (cachedData) {
+      return cachedData;
+    }
+
     try {
       const response = await api.get('/items/pickuplogs/pickuphistory/');
       console.log('Recently picked items data:', response.data);
+      cacheService.set(cacheKey, {}, response.data);
       return response.data;
     } catch (error) {
       console.error('Error fetching recent pickups:', error);
@@ -432,7 +485,16 @@ export const LostFoundService = {
 
   // 🔹 Enhanced Stats
   getStats: async (params = {}) => {
+    const cacheKey = 'items/stats';
+    const cachedData = cacheService.get(cacheKey, params);
+
+    if (cachedData) {
+      return cachedData;
+    }
+
     const response = await api.get('/items/stats/', { params });
+    // Use longer cache duration for stats
+    cacheService.set(cacheKey, params, response.data, cacheService.LONG_CACHE_DURATION);
     return response.data;
   },
 
@@ -452,6 +514,10 @@ export const LostFoundService = {
 
   createPickupLog: async (data) => {
     const response = await api.post('/items/pickuplogs/', data);
+    // Clear relevant caches after creating pickup log
+    CacheInvalidation.clearItemsCache();
+    CacheInvalidation.clearStatsCache();
+    CacheInvalidation.clearPickupsCache();
     return response.data;
   },
 
@@ -474,6 +540,17 @@ export const LostFoundService = {
   printMatchReceipt: async (trackingId) => {
     const response = await api.post('/items/found/print_match/', {
       tracking_id: trackingId
+    });
+    return response.data;
+  },
+
+  // 🔹 Get Match Details
+  getMatchDetails: async (lostItemId, foundItemId) => {
+    const response = await api.get('/items/found/match_details/', {
+      params: {
+        lost_item_id: lostItemId,
+        found_item_id: foundItemId
+      }
     });
     return response.data;
   }

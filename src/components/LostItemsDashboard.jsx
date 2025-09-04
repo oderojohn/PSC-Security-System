@@ -3,13 +3,18 @@ import LostFoundHeader from './LostItems/LostFoundHeader';
 import LostFoundStats from './LostItems/LostFoundStats';
 import LostFoundTable from './LostItems/tables/LostFoundTable';
 import LostFoundModals from './LostItems/LostFoundModals';
+import { NotificationContainer } from './Notification';
 import { LostFoundService } from '../service/api/api';
+import { cacheService } from '../service/cache/cacheService';
+import { useNotification } from '../hooks/useNotification';
 import '../assets/css/LostItemsDashboard.css';
 
 const LostItemsDashboard = () => {
+  const { notifications, success, error, removeNotification } = useNotification();
   const [lostItems, setLostItems] = useState([]);
   const [foundItems, setFoundItems] = useState([]);
   const [potentialMatches, setPotentialMatches] = useState([]);
+  const [loadingMatches, setLoadingMatches] = useState(false);
   const [stats, setStats] = useState({ lost_count: 0, found_count: 0, pending_count: 0 });
   const [pickedItems, setPickedItems] = useState([]);
   const [showAddLostModal, setShowAddLostModal] = useState(false);
@@ -21,6 +26,7 @@ const LostItemsDashboard = () => {
   const [showPickupForm, setShowPickupForm] = useState(false);
   const [showMatches, setShowMatches] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [cacheStats, setCacheStats] = useState({ memoryEntries: 0, localStorageEntries: 0, totalEntries: 0 });
 
   const [newLostItem, setNewLostItem] = useState({
     type: 'card',
@@ -53,23 +59,28 @@ const LostItemsDashboard = () => {
       const recentPickups = await LostFoundService.getRecentPickups();
       setPickedItems(recentPickups);
       console.log('Fetched recent pickups:', recentPickups);
-    } catch (error) {
-      console.error('Error fetching recent pickups:', error);
+    } catch (err) {
+      console.error('Error fetching recent pickups:', err);
     }
   };
 
   const fetchPotentialMatches = async () => {
   try {
+    setLoadingMatches(true);
     const res = await LostFoundService.getPotentialMatchesForLostItem();
 
     // Extract the matches array
     const matches = res?.matches || [];
 
     console.log("✅ Normalized matches", matches);
+    console.log("✅ Matches length:", matches.length);
+    console.log("✅ First match:", matches[0]);
 
     setPotentialMatches(matches);
-  } catch (error) {
-    console.error("Error fetching potential matches:", error);
+  } catch (err) {
+    console.error("Error fetching potential matches:", err);
+  } finally {
+    setLoadingMatches(false);
   }
 };
 
@@ -149,22 +160,35 @@ const LostItemsDashboard = () => {
           weekly_trends: statsData.weekly_trends || {}
         });
       }
-    } catch (error) {
-      console.error('Error fetching data:', error);
+    } catch (err) {
+      console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
     }
   }, [activeTab, searchTerm]);
 
   useEffect(() => {
+    console.log("🔍 Active tab changed to:", activeTab);
     fetchData();
   }, [fetchData]);
 
   useEffect(() => {
-    if (activeTab === 'lost' || activeTab === 'lost-items') {
+    if (activeTab === 'lost' || activeTab === 'lost-items' || activeTab === 'matches') {
       fetchPotentialMatches();
     }
   }, [activeTab]);
+
+  // Update cache stats periodically
+  useEffect(() => {
+    const updateCacheStats = () => {
+      setCacheStats(cacheService.getStats());
+    };
+
+    updateCacheStats();
+    const interval = setInterval(updateCacheStats, 30000); // Update every 30 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleAddLostItem = async () => {
     await fetchData();
@@ -172,18 +196,27 @@ const LostItemsDashboard = () => {
 
   const handleAddFoundItem = async (formData) => {
     try {
-      const config = {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      };
-
-      const createdItem = await LostFoundService.createFoundItem(formData, config);
+      const createdItem = await LostFoundService.createFoundItem(formData);
       setFoundItems([...foundItems, createdItem]);
       setShowAddFoundModal(false);
       fetchData();
-    } catch (error) {
-      console.error('Error creating found item:', error);
+
+      // Extract item name from FormData or use default
+      let itemName = 'item';
+      if (formData instanceof FormData) {
+        itemName = formData.get('item_name') || formData.get('card_last_four') || 'item';
+      }
+
+      success(
+        'Found Item Reported',
+        `Successfully reported ${itemName}`
+      );
+    } catch (err) {
+      console.error('Error creating found item:', err);
+      error(
+        'Failed to Report Found Item',
+        err.response?.data?.message || 'Please check your input and try again'
+      );
     }
   };
 
@@ -194,8 +227,16 @@ const LostItemsDashboard = () => {
       if (activeTab === 'lost' || activeTab === 'lost-items') {
         fetchPotentialMatches();
       }
-    } catch (error) {
-      console.error('Error marking item as found:', error);
+      success(
+        'Item Marked as Found',
+        'The lost item has been successfully marked as found.'
+      );
+    } catch (err) {
+      console.error('Error marking item as found:', err);
+      error(
+        'Failed to Mark as Found',
+        'There was an error marking the item as found. Please try again.'
+      );
     }
   };
 
@@ -215,8 +256,16 @@ const LostItemsDashboard = () => {
       setSelectedItem(null);
       fetchData();
       fetchRecentPickups();
-    } catch (error) {
-      console.error('Error picking item:', error);
+      success(
+        'Item Picked Up',
+        'The item has been successfully marked as picked up.'
+      );
+    } catch (err) {
+      console.error('Error picking item:', err);
+      error(
+        'Failed to Mark as Picked',
+        'There was an error marking the item as picked up. Please try again.'
+      );
     }
   };
 
@@ -263,6 +312,7 @@ const LostItemsDashboard = () => {
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         activeTab={activeTab}
+        cacheStats={cacheStats}
       />
 
       <LostFoundStats
@@ -293,6 +343,7 @@ const LostItemsDashboard = () => {
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           potentialMatches={potentialMatches}
+          loadingMatches={loadingMatches}
           showMatches={showMatches}
           setShowMatches={setShowMatches}
           fetchPotentialMatches={fetchPotentialMatches}
@@ -331,6 +382,11 @@ const LostItemsDashboard = () => {
         showMatchesModal={showMatchesModal}
         setShowMatchesModal={setShowMatchesModal}
         potentialMatches={potentialMatches}
+      />
+
+      <NotificationContainer
+        notifications={notifications}
+        onClose={removeNotification}
       />
     </div>
   );
